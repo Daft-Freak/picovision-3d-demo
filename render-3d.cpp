@@ -126,6 +126,7 @@ void Render3D::fill_triangle(VertexOutData *data)
     }
 
     auto p1M0 = p1 - p0;
+    auto p2M0 = p2 - p0;
     auto p2M1 = p2 - p1;
 
     auto col1M0 = cols[1] - cols[0];
@@ -136,15 +137,15 @@ void Render3D::fill_triangle(VertexOutData *data)
     {
         for(int y = 0; y <= p1M0.y; y++)
         {
-            auto yD1 = Fixed32<>(y) / (p2.y - p0.y);
+            auto yD1 = Fixed32<>(y) / (p2M0.y);
             auto yD2 = Fixed32<>(y) / p1M0.y;
-            auto startX = int32_t(Fixed32<>(p0.x) + yD1 * (p2.x - p0.x));
+            auto startX = int32_t(Fixed32<>(p0.x) + yD1 * p2M0.x);
             auto endX   = int32_t(Fixed32<>(p0.x) + yD2 * p1M0.x);
 
             if(endX - startX == 0)
                 continue;
 
-            auto startZ = p0.z + int32_t(yD1 * (p2.z - p0.z));
+            auto startZ = p0.z + int32_t(yD1 * p2M0.z);
             auto endZ   = p0.z + int32_t(yD2 * p1M0.z);
 
             gradient_h_line(startX, endX, startZ, endZ, y + p0.y, cols[0] + col2M0 * float(yD1), cols[0] + col1M0 * float(yD2));
@@ -156,15 +157,15 @@ void Render3D::fill_triangle(VertexOutData *data)
     {
         for(int y = 0; y <= p2M1.y; y++)
         {
-            auto yD1 = Fixed32<>(y + p1M0.y) / (p2.y - p0.y);
+            auto yD1 = Fixed32<>(y + p1M0.y) / p2M0.y;
             auto yD2 = Fixed32<>(y) / p2M1.y;
-            auto startX = int32_t(Fixed32<>(p0.x) + yD1 * (p2.x - p0.x));
+            auto startX = int32_t(Fixed32<>(p0.x) + yD1 * p2M0.x);
             auto endX   = int32_t(Fixed32<>(p1.x) + yD2 * p2M1.x);
 
             if(endX - startX == 0)
                 continue;
 
-            auto startZ = p0.z + int32_t(yD1 * (p2.z - p0.z));
+            auto startZ = p0.z + int32_t(yD1 * p2M0.z);
             auto endZ   = p1.z + int32_t(yD2 * p2M1.z);
 
             gradient_h_line(startX, endX, startZ, endZ, y + p1.y, cols[0] + col2M0 * float(yD1), cols[1] + col2M1 * float(yD2));
