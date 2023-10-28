@@ -202,6 +202,12 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
     {
         for(int y = 0; y <= p1M0.y; y++)
         {
+            if(y + p0.y < tile_pos.y)
+                continue;
+
+            if(y + p0.y >= tile_pos.y + tile_height)
+                break;
+
             auto yD1 = Fixed32<>(y) / (p2M0.y);
             auto yD2 = Fixed32<>(y) / p1M0.y;
             auto startX = int32_t(Fixed32<>(p0.x) + yD1 * p2M0.x);
@@ -222,6 +228,12 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
     {
         for(int y = 0; y <= p2M1.y; y++)
         {
+            if(y + p1.y < tile_pos.y)
+                continue;
+                
+            if(y + p1.y >= tile_pos.y + tile_height)
+                break;
+
             auto yD1 = Fixed32<>(y + p1M0.y) / p2M0.y;
             auto yD2 = Fixed32<>(y) / p2M1.y;
             auto startX = int32_t(Fixed32<>(p0.x) + yD1 * p2M0.x);
@@ -241,9 +253,6 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
 
 void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, Pen col1, Pen col2)
 {
-    if(y < 0 || y >= tile_height)
-        return;
-
     if(x1 > x2)
     {
         std::swap(x1, x2);
