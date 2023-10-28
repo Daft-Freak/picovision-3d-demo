@@ -164,9 +164,9 @@ void Render3D::transform_vertex(VertexOutData &pos)
     Rect viewport{0, 0, screen.bounds.w, screen.bounds.h};
 
     // viewport
-    pos.x = Fixed32<>(viewport.x) + (pos.x * 0.5f + 0.5f) * viewport.w;
-    pos.y = Fixed32<>(viewport.y) + (pos.y * 0.5f + 0.5f) * viewport.h;
-    pos.z = (pos.z + 1.0f) * 32767.5f;
+    pos.x = Fixed32<>(viewport.x) + (pos.x * Fixed32<>(0.5f) + 0.5f) * viewport.w;
+    pos.y = Fixed32<>(viewport.y) + (pos.y * Fixed32<>(0.5f) + 0.5f) * viewport.h;
+    pos.z = (pos.z + 1.0f) * Fixed32<>(32767.5f);
 }
 
 void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
