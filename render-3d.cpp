@@ -121,7 +121,7 @@ void Render3D::transform_vertex(VertexOutData &pos)
     pos.y /= pos.w;
     pos.z /= pos.w;
 
-    Rect viewport{0, 0, 320, 240};
+    Rect viewport{0, 0, screen.bounds.w, screen.bounds.h};
 
     // viewport
     pos.x = Fixed32<>(viewport.x) + (pos.x * 0.5f + 0.5f) * viewport.w;
