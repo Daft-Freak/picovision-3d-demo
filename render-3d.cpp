@@ -119,15 +119,26 @@ void Render3D::rasterise()
                 fill_triangle(ptr, {x, y});
 
             // store colour tile
-            // TODO: optimise based on screen format
-            for(int ty = 0; ty < tile_height; ty++)
+            if(screen.format == PixelFormat::BGR555)
             {
-                auto offset = screen.offset(x, y + ty);
-                for(int tx = 0; tx < tile_width; tx++)
-                {
-                    auto pen = unpack_colour(tile_colour_buffer[tx + ty * tile_width]);
+                // assume picovision, which has a 555 -> 555 blit
+                static Surface tile_surf(reinterpret_cast<uint8_t *>(tile_colour_buffer), PixelFormat::BGR555, {tile_width, tile_height});
 
-                    screen.pbf(&pen, &screen, offset + tx, 1);
+                screen.blit(&tile_surf, {0, 0, tile_width, tile_height}, {x, y});
+            }
+            else
+            {
+                // fallback
+                // TODO: optimise based on screen format
+                for(int ty = 0; ty < tile_height; ty++)
+                {
+                    auto offset = screen.offset(x, y + ty);
+                    for(int tx = 0; tx < tile_width; tx++)
+                    {
+                        auto pen = unpack_colour(tile_colour_buffer[tx + ty * tile_width]);
+
+                        screen.pbf(&pen, &screen, offset + tx, 1);
+                    }
                 }
             }
         }
@@ -283,12 +294,19 @@ void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, 
 
 uint16_t Render3D::pack_colour(Pen p)
 {
+#ifdef BLIT_BOARD_PIMORONI_PICOVISION
+    // 555
+    return (p.b >> 3) | ((p.g >> 3) << 5) | ((p.r >> 3) << 10);
+#else
     // 565
     return (p.r >> 3) | ((p.g >> 2) << 5) | ((p.b >> 3) << 11);
+#endif
 }
 
 blit::Pen Render3D::unpack_colour(uint16_t c)
 {
+    // not used for picovision
+
     // 565
     uint8_t r = c & 0x1F;
     uint8_t g = (c >> 5) & 0x3F;
