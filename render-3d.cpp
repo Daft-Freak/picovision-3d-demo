@@ -28,7 +28,7 @@ PenDelta operator -(Pen a, Pen b)
 
 Pen operator +(Pen p, PenDelta d)
 {
-    return {p.r + d.r, p.g + d.g, p.b + d.b, p.a + d.a};
+    return {uint8_t(p.r + d.r), uint8_t(p.g + d.g), uint8_t(p.b + d.b), uint8_t(p.a + d.a)};
 }
 
 void Render3D::draw(int count, const float *ptr)
