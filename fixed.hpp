@@ -99,3 +99,9 @@ public:
 private:
     T val;
 };
+
+template<int frac_bits = 16>
+using Fixed32 = Fixed<int32_t, frac_bits>;
+
+template<int frac_bits = 16>
+using UFixed32 = Fixed<uint32_t, frac_bits>;
