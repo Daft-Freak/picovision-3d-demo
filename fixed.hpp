@@ -6,8 +6,9 @@ class Fixed final
 public:
     using SameFixed = Fixed<T, frac_bits>;
 
+    constexpr Fixed() = default;
+
     // conversions to fixed
-    constexpr Fixed(int int_val) : val(int_val << frac_bits) {}
     constexpr Fixed(T int_val) : val(int_val << frac_bits) {}
     constexpr Fixed(float float_val) : val(float_val * (1 << frac_bits)) {}
 
@@ -22,7 +23,6 @@ public:
 
     // conversions from fixed
     constexpr explicit operator int() {return val >> frac_bits;}
-    constexpr explicit operator T() {return val >> frac_bits;}
     constexpr explicit operator float() {return static_cast<float>(val) / (1 << frac_bits);}
 
     // basic operators
