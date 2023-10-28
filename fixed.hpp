@@ -24,7 +24,9 @@ public:
     }
 
     // conversions from fixed
-    constexpr explicit operator int() {return val >> frac_bits;}
+    constexpr explicit operator T() {return val >> frac_bits;}
+    template<class U, std::enable_if_t<std::is_integral_v<U>, bool> = true>
+    constexpr explicit operator U() {return val >> frac_bits;}
     constexpr explicit operator float() {return static_cast<float>(val) / (1 << frac_bits);}
 
     // basic operators
