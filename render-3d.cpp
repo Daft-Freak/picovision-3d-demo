@@ -31,6 +31,9 @@ Pen operator +(Pen p, PenDelta d)
     return {uint8_t(p.r + d.r), uint8_t(p.g + d.g), uint8_t(p.b + d.b), uint8_t(p.a + d.a)};
 }
 
+Render3D::Render3D() : tile_surf(reinterpret_cast<uint8_t *>(tile_colour_buffer), PixelFormat::BGR555, {tile_width, tile_height})
+{}
+
 void Render3D::draw(int count, const float *ptr)
 {
     if(!transformed_vertex_ptr)
@@ -128,8 +131,6 @@ void Render3D::rasterise()
             if(screen.format == PixelFormat::BGR555)
             {
                 // assume picovision, which has a 555 -> 555 blit
-                static Surface tile_surf(reinterpret_cast<uint8_t *>(tile_colour_buffer), PixelFormat::BGR555, {tile_width, tile_height});
-
                 screen.blit(&tile_surf, {0, 0, tile_width, tile_height}, {x, y});
             }
             else
