@@ -66,28 +66,28 @@ public:
 
 
     // more operators/wrappers
-    constexpr SameFixed operator +(SameFixed f)
+    constexpr SameFixed operator +(SameFixed f) const
     {
         auto res = *this;
         res += f;
         return res;
     }
 
-    constexpr SameFixed operator -(SameFixed f)
+    constexpr SameFixed operator -(SameFixed f) const
     {
         auto res = *this;
         res -= f;
         return res;
     }
 
-    constexpr SameFixed operator *(SameFixed f)
+    constexpr SameFixed operator *(SameFixed f) const
     {
         auto res = *this;
         res *= f;
         return res;
     }
 
-    constexpr SameFixed operator /(SameFixed f)
+    constexpr SameFixed operator /(SameFixed f) const
     {
         auto res = *this;
         res /= f;
