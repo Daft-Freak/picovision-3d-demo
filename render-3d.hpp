@@ -10,7 +10,7 @@ public:
     struct VertexOutData
     {
         Fixed32<> x, y, z, w;
-        float r, g, b, a;
+        uint8_t r, g, b, a;
     };
 
     using VertexShaderFunc = void(*)(const float *, VertexOutData *, const Render3D &);
@@ -36,7 +36,7 @@ protected:
 
     void fill_triangle(VertexOutData *data);
 
-    void gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, const blit::Vec3 &col1, const blit::Vec3 &col2);
+    void gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, blit::Pen col1, blit::Pen col2);
 
     //uint8_t framebuffer[320 * 240 * 3];
     uint16_t depth_buffer[320 * 240];

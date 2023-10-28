@@ -7,6 +7,30 @@
 
 using namespace blit;
 
+// helper for blending pens
+struct PenDelta
+{
+    int32_t r;
+    int32_t g;
+    int32_t b;
+    int32_t a;
+
+    PenDelta operator *(Fixed32<> s)
+    {
+        return {int32_t(s * r), int32_t(s * g), int32_t(s * b), int32_t(s * a)};
+    }
+};
+
+PenDelta operator -(Pen a, Pen b)
+{
+    return {a.r - b.r, a.b - b.b, a.g - b.g, a.a - b.a};
+}
+
+Pen operator +(Pen p, PenDelta d)
+{
+    return {p.r + d.r, p.g + d.g, p.b + d.b, p.a + d.a};
+}
+
 void Render3D::clear()
 {
     //memset(framebuffer, 0, 320 * 240 * 3);
@@ -88,7 +112,7 @@ void Render3D::transform_vertex(VertexOutData &pos)
 
 void Render3D::fill_triangle(VertexOutData *data)
 {
-    Vec3 cols[3]{
+    Pen cols[3]{
         {data[0].r, data[0].g, data[0].b},
         {data[1].r, data[1].g, data[1].b},
         {data[2].r, data[2].g, data[2].b}
@@ -103,7 +127,7 @@ void Render3D::fill_triangle(VertexOutData *data)
             return {x - v.x, y - v.y, z - v.z};
         }
     };
-    
+
     // sort points
     IntVec3 p0{int32_t(data[0].x), int32_t(data[0].y), int32_t(UFixed32<>(data[0].z))};
     IntVec3 p1{int32_t(data[1].x), int32_t(data[1].y), int32_t(UFixed32<>(data[1].z))};
@@ -148,7 +172,7 @@ void Render3D::fill_triangle(VertexOutData *data)
             auto startZ = p0.z + int32_t(yD1 * p2M0.z);
             auto endZ   = p0.z + int32_t(yD2 * p1M0.z);
 
-            gradient_h_line(startX, endX, startZ, endZ, y + p0.y, cols[0] + col2M0 * float(yD1), cols[0] + col1M0 * float(yD2));
+            gradient_h_line(startX, endX, startZ, endZ, y + p0.y, cols[0] + col2M0 * yD1, cols[0] + col1M0 * yD2);
         }
 
     }
@@ -168,13 +192,13 @@ void Render3D::fill_triangle(VertexOutData *data)
             auto startZ = p0.z + int32_t(yD1 * p2M0.z);
             auto endZ   = p1.z + int32_t(yD2 * p2M1.z);
 
-            gradient_h_line(startX, endX, startZ, endZ, y + p1.y, cols[0] + col2M0 * float(yD1), cols[1] + col2M1 * float(yD2));
+            gradient_h_line(startX, endX, startZ, endZ, y + p1.y, cols[0] + col2M0 * yD1, cols[1] + col2M1 * yD2);
         }
     }
     
 }
 
-void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, const Vec3 &col1, const Vec3 &col2)
+void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, Pen col1, Pen col2)
 {
     if(y < 0 || y >= 240)
         return;
@@ -193,9 +217,9 @@ void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, 
         if(z > depth_buffer[x1 + x + y * 320])
             continue;
 
-        auto col = col1 + (col2 - col1) * float(xD);
+        auto col = col1 + (col2 - col1) * xD;
 
-        screen.pen = {col.x, col.y, col.z};
+        screen.pen = col;
         screen.pixel({x1 + x, y});
 
         depth_buffer[x1 + x + y * 320] = z;

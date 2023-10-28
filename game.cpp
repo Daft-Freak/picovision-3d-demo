@@ -48,9 +48,9 @@ void noColShader(const float *in, Render3D::VertexOutData *out, const Render3D &
     out->w = tmp.w;
 
     // col
-    out->r = 1.0f;
-    out->g = 1.0f;
-    out->b = 1.0f;
+    out->r = 255;
+    out->g = 255;
+    out->b = 255;
 }
 
 // in is xyz rgb
@@ -69,9 +69,9 @@ void colPassthroughShader(const float *in, Render3D::VertexOutData *out, const R
     out->w = tmp.w;
 
     // col
-    out->r = in[3];
-    out->g = in[4];
-    out->b = in[5];
+    out->r = in[3] * 255.0f;
+    out->g = in[4] * 255.0f;
+    out->b = in[5] * 255.0f;
 }
 
 // in is xyz nx ny nx
@@ -101,9 +101,9 @@ void litShader(const float *in, Render3D::VertexOutData *out, const Render3D &r)
 
     float dot = light.x * nor.x + light.y * nor.y + light.z * nor.z;
 
-    out->r = std::max(dot, 0.0f);
-    out->g = std::max(dot, 0.0f);
-    out->b = std::max(dot, 0.0f);
+    out->r = std::max(dot, 0.0f) * 255.0f;
+    out->g = std::max(dot, 0.0f) * 255.0f;
+    out->b = std::max(dot, 0.0f) * 255.0f;
 }
 
 //
