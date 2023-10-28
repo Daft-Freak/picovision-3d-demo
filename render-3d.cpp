@@ -57,7 +57,7 @@ void Render3D::set_projection(Mat4 m)
     mvp = projection * model_view;
 }
 
-const Mat4 &Render3D::get_model_view_projection() const
+const FixedMat4<> &Render3D::get_model_view_projection() const
 {
     return mvp;
 }

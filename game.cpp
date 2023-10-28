@@ -36,16 +36,16 @@ Mat4 frustum(float left, float right, float bottom, float top, float nearVal, fl
 // out is xyzw rgb
 void noColShader(const float *in, float *out, const Render3D &r)
 {
-    Vec4 tmp(in[0], in[1], in[2], 1.0f);
+    FixedVec4 tmp(in[0], in[1], in[2], 1.0f);
     
     // transform
     tmp = r.get_model_view_projection() * tmp;
 
     // pos
-    out[0] = tmp.x;
-    out[1] = tmp.y;
-    out[2] = tmp.z;
-    out[3] = tmp.w;
+    out[0] = float(tmp.x);
+    out[1] = float(tmp.y);
+    out[2] = float(tmp.z);
+    out[3] = float(tmp.w);
 
     // col
     out[4] = 1.0f;
@@ -57,16 +57,16 @@ void noColShader(const float *in, float *out, const Render3D &r)
 // out is xyzw rgb
 void colPassthroughShader(const float *in, float *out, const Render3D &r)
 {
-    Vec4 tmp(in[0], in[1], in[2], 1.0f);
+    FixedVec4 tmp(in[0], in[1], in[2], 1.0f);
     
     // transform
     tmp = r.get_model_view_projection() * tmp;
 
     // pos
-    out[0] = tmp.x;
-    out[1] = tmp.y;
-    out[2] = tmp.z;
-    out[3] = tmp.w;
+    out[0] = float(tmp.x);
+    out[1] = float(tmp.y);
+    out[2] = float(tmp.z);
+    out[3] = float(tmp.w);
 
     // col
     out[4] = in[3];
@@ -78,16 +78,16 @@ void colPassthroughShader(const float *in, float *out, const Render3D &r)
 // out is xyzw rgb
 void litShader(const float *in, float *out, const Render3D &r)
 {
-    Vec4 tmp(in[0], in[1], in[2], 1.0f);
+    FixedVec4 tmp(in[0], in[1], in[2], 1.0f);
     
     // transform
     tmp = r.get_model_view_projection() * tmp;
 
     // pos
-    out[0] = tmp.x;
-    out[1] = tmp.y;
-    out[2] = tmp.z;
-    out[3] = tmp.w;
+    out[0] = float(tmp.x);
+    out[1] = float(tmp.y);
+    out[2] = float(tmp.z);
+    out[3] = float(tmp.w);
 
     // col
     Vec3 light(-0.577350269f, -0.577350269f, -0.577350269f);

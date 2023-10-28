@@ -2,6 +2,8 @@
 
 #include "types/mat4.hpp"
 
+#include "fixed-mat4.hpp"
+
 class Render3D;
 using VertexShaderFunc = void(*)(const float *, float *, const Render3D &);
 
@@ -18,7 +20,7 @@ public:
     const blit::Mat4 &get_projection() const;
     void set_projection(blit::Mat4 m);
 
-    const blit::Mat4 &get_model_view_projection() const;
+    const FixedMat4<> &get_model_view_projection() const;
 
     void set_vertex_stride(int stride);
 
@@ -33,7 +35,8 @@ protected:
 
     //uint8_t framebuffer[320 * 240 * 3];
     uint16_t depth_buffer[320 * 240];
-    blit::Mat4 model_view, projection, mvp;
+    blit::Mat4 model_view, projection;
+    FixedMat4<> mvp;
 
     int vertex_stride = 3;
     VertexShaderFunc vertex_shader = nullptr;
