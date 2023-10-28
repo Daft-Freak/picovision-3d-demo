@@ -31,6 +31,8 @@ public:
 
     void set_vertex_shader(VertexShaderFunc shader);
 
+    void rasterise();
+
 protected:
     void transform_vertex(VertexOutData &pos);
 
@@ -45,4 +47,7 @@ protected:
 
     int vertex_stride = 3;
     VertexShaderFunc vertex_shader = nullptr;
+
+    VertexOutData transformed_vertices[1024];
+    VertexOutData *transformed_vertex_ptr = nullptr;
 };

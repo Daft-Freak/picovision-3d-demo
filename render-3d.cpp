@@ -41,10 +41,17 @@ void Render3D::clear()
 
 void Render3D::draw(int count, const float *ptr)
 {
+    if(!transformed_vertex_ptr)
+        transformed_vertex_ptr = transformed_vertices;
+
     // triangles
     for(int i = 0; i < count; i += 3)
     {
-        VertexOutData trans[3];
+        // vertex limit reached
+        if(transformed_vertex_ptr + 3 >= transformed_vertices + std::size(transformed_vertices))
+            break;
+
+        auto trans = transformed_vertex_ptr;
 
         for(int j = 0; j < 3; j++)
         {
@@ -52,7 +59,8 @@ void Render3D::draw(int count, const float *ptr)
             transform_vertex(trans[j]);
         }
 
-        fill_triangle(trans);
+        // TODO: clipping
+        transformed_vertex_ptr += 3;
     }
 }
 
@@ -93,6 +101,17 @@ void Render3D::set_vertex_stride(int stride)
 void Render3D::set_vertex_shader(VertexShaderFunc shader)
 {
     vertex_shader = shader;
+}
+
+void Render3D::rasterise()
+{
+    if(!transformed_vertex_ptr)
+        return;
+
+    for(auto ptr = transformed_vertices; ptr != transformed_vertex_ptr; ptr += 3)
+        fill_triangle(ptr);
+
+    transformed_vertex_ptr = nullptr;
 }
 
 void Render3D::transform_vertex(VertexOutData &pos)

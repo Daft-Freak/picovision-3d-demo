@@ -187,16 +187,20 @@ void render(uint32_t time)
     r3d.clear();
     r3d.set_vertex_stride(6);
 
-    auto start = now_us();
+    auto vert_start = now_us();
 
     r3d.set_vertex_shader(litShader);
     r3d.draw(6 * 6, vertices_with_normals);
+    auto vert_end = now_us();
 
-    auto end = now_us();
+    auto frag_start = now_us();
+    r3d.rasterise();
+    auto frag_end = now_us();
 
     ang += 0.5f;
     ang2 -= 0.3f;
 
     screen.pen = {255, 0, 0};
-    screen.text(std::to_string(us_diff(start, end)), minimal_font, {0, 0});
+    screen.text(std::to_string(us_diff(vert_start, vert_end)), minimal_font, {0, 0});
+    screen.text(std::to_string(us_diff(frag_start, frag_end)), minimal_font, {0, 10});
 }
