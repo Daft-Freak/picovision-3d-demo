@@ -34,7 +34,7 @@ Mat4 frustum(float left, float right, float bottom, float top, float nearVal, fl
 // "shaders"
 // in is xyz
 // out is xyzw rgb
-void noColShader(const float *in, float *out, const Render3D &r)
+void noColShader(const float *in, Render3D::VertexOutData *out, const Render3D &r)
 {
     FixedVec4 tmp(in[0], in[1], in[2], 1.0f);
     
@@ -42,20 +42,20 @@ void noColShader(const float *in, float *out, const Render3D &r)
     tmp = r.get_model_view_projection() * tmp;
 
     // pos
-    out[0] = float(tmp.x);
-    out[1] = float(tmp.y);
-    out[2] = float(tmp.z);
-    out[3] = float(tmp.w);
+    out->x = float(tmp.x);
+    out->y = float(tmp.y);
+    out->z = float(tmp.z);
+    out->w = float(tmp.w);
 
     // col
-    out[4] = 1.0f;
-    out[5] = 1.0f;
-    out[6] = 1.0f;
+    out->r = 1.0f;
+    out->g = 1.0f;
+    out->b = 1.0f;
 }
 
 // in is xyz rgb
 // out is xyzw rgb
-void colPassthroughShader(const float *in, float *out, const Render3D &r)
+void colPassthroughShader(const float *in, Render3D::VertexOutData *out, const Render3D &r)
 {
     FixedVec4 tmp(in[0], in[1], in[2], 1.0f);
     
@@ -63,20 +63,20 @@ void colPassthroughShader(const float *in, float *out, const Render3D &r)
     tmp = r.get_model_view_projection() * tmp;
 
     // pos
-    out[0] = float(tmp.x);
-    out[1] = float(tmp.y);
-    out[2] = float(tmp.z);
-    out[3] = float(tmp.w);
+    out->x = float(tmp.x);
+    out->y = float(tmp.y);
+    out->z = float(tmp.z);
+    out->w = float(tmp.w);
 
     // col
-    out[4] = in[3];
-    out[5] = in[4];
-    out[6] = in[5];
+    out->r = in[3];
+    out->g = in[4];
+    out->b = in[5];
 }
 
 // in is xyz nx ny nx
 // out is xyzw rgb
-void litShader(const float *in, float *out, const Render3D &r)
+void litShader(const float *in, Render3D::VertexOutData *out, const Render3D &r)
 {
     FixedVec4 tmp(in[0], in[1], in[2], 1.0f);
     
@@ -84,10 +84,10 @@ void litShader(const float *in, float *out, const Render3D &r)
     tmp = r.get_model_view_projection() * tmp;
 
     // pos
-    out[0] = float(tmp.x);
-    out[1] = float(tmp.y);
-    out[2] = float(tmp.z);
-    out[3] = float(tmp.w);
+    out->x = float(tmp.x);
+    out->y = float(tmp.y);
+    out->z = float(tmp.z);
+    out->w = float(tmp.w);
 
     // col
     Vec3 light(-0.577350269f, -0.577350269f, -0.577350269f);
@@ -101,9 +101,9 @@ void litShader(const float *in, float *out, const Render3D &r)
 
     float dot = light.x * nor.x + light.y * nor.y + light.z * nor.z;
 
-    out[4] = std::max(dot, 0.0f);
-    out[5] = std::max(dot, 0.0f);
-    out[6] = std::max(dot, 0.0f);
+    out->r = std::max(dot, 0.0f);
+    out->g = std::max(dot, 0.0f);
+    out->b = std::max(dot, 0.0f);
 }
 
 //

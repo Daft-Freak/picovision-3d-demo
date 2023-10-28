@@ -4,12 +4,17 @@
 
 #include "fixed-mat4.hpp"
 
-class Render3D;
-using VertexShaderFunc = void(*)(const float *, float *, const Render3D &);
-
 class Render3D
 {
 public:
+    struct VertexOutData
+    {
+        float x, y, z, w;
+        float r, g, b, a;
+    };
+
+    using VertexShaderFunc = void(*)(const float *, VertexOutData *, const Render3D &);
+
     void clear();
 
     void draw(int count, const float *ptr);
@@ -27,9 +32,9 @@ public:
     void set_vertex_shader(VertexShaderFunc shader);
 
 protected:
-    void transform_vertex(float *pos);
+    void transform_vertex(VertexOutData &pos);
 
-    void fill_triangle(float *data);
+    void fill_triangle(VertexOutData *data);
 
     void gradient_h_line(int x1, int x2, float z1, float z2, int y, const blit::Vec3 &col1, const blit::Vec3 &col2);
 

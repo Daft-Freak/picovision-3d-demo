@@ -20,13 +20,12 @@ void Render3D::draw(int count, const float *ptr)
     // triangles
     for(int i = 0; i < count; i += 3)
     {
-        int out_stride = 7; //xyzw, rgb
-        float trans[out_stride * 3];
+        VertexOutData trans[3];
 
         for(int j = 0; j < 3; j++)
         {
-            vertex_shader(ptr + (i + j) * vertex_stride, trans + out_stride * j, *this);
-            transform_vertex(trans + out_stride * j);
+            vertex_shader(ptr + (i + j) * vertex_stride, trans + j, *this);
+            transform_vertex(trans[j]);
         }
 
         fill_triangle(trans);
@@ -72,36 +71,33 @@ void Render3D::set_vertex_shader(VertexShaderFunc shader)
     vertex_shader = shader;
 }
 
-void Render3D::transform_vertex(float *pos)
+void Render3D::transform_vertex(VertexOutData &pos)
 {
     // perspective
-    pos[0] /= pos[3];
-    pos[1] /= pos[3];
-    pos[2] /= pos[3];
+    pos.x /= pos.w;
+    pos.y /= pos.w;
+    pos.z /= pos.w;
 
     Rect viewport{0, 0, 320, 240};
 
     // viewport
-    pos[0] = viewport.x + (pos[0] * 0.5f + 0.5f) * viewport.w;
-    pos[1] = viewport.y + (pos[1] * 0.5f + 0.5f) * viewport.h;
-    pos[2] = (pos[2] + 1.0f) * 32767.5f;
+    pos.x = viewport.x + (pos.x * 0.5f + 0.5f) * viewport.w;
+    pos.y = viewport.y + (pos.y * 0.5f + 0.5f) * viewport.h;
+    pos.z = (pos.z + 1.0f) * 32767.5f;
 }
 
-void Render3D::fill_triangle(float *data)
+void Render3D::fill_triangle(VertexOutData *data)
 {
-    // data = 7 floats per vertex
-    int stride = 7;
-
     Vec3 cols[3]{
-        {data[stride * 0 + 4], data[stride * 0 + 5], data[stride * 0 + 6]},
-        {data[stride * 1 + 4], data[stride * 1 + 5], data[stride * 1 + 6]},
-        {data[stride * 2 + 4], data[stride * 2 + 5], data[stride * 2 + 6]}
+        {data[0].r, data[0].g, data[0].b},
+        {data[1].r, data[1].g, data[1].b},
+        {data[2].r, data[2].g, data[2].b}
     };
 
     // sort points
-    Vec3 p0{std::floor(data[stride * 0 + 0]), std::floor(data[stride * 0 + 1]), std::floor(data[stride * 0 + 2])};
-    Vec3 p1{std::floor(data[stride * 1 + 0]), std::floor(data[stride * 1 + 1]), std::floor(data[stride * 1 + 2])};
-    Vec3 p2{std::floor(data[stride * 2 + 0]), std::floor(data[stride * 2 + 1]), std::floor(data[stride * 2 + 2])};
+    Vec3 p0{std::floor(data[0].x), float(data[0].y), std::floor(data[0].z)};
+    Vec3 p1{std::floor(data[1].x), float(data[1].y), std::floor(data[1].z)};
+    Vec3 p2{std::floor(data[2].x), float(data[2].y), std::floor(data[2].z)};
 
     if(p0.y > p2.y)
     {
