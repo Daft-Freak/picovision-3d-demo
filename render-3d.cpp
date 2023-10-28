@@ -122,11 +122,12 @@ void Render3D::rasterise()
             // TODO: optimise based on screen format
             for(int ty = 0; ty < tile_height; ty++)
             {
+                auto offset = screen.offset(x, y + ty);
                 for(int tx = 0; tx < tile_width; tx++)
                 {
-                    // SLOOOOOOW
-                    screen.pen = unpack_colour(tile_colour_buffer[tx + ty * tile_width]);
-                    screen.pixel({x + tx, y + ty});
+                    auto pen = unpack_colour(tile_colour_buffer[tx + ty * tile_width]);
+
+                    screen.pbf(&pen, &screen, offset + tx, 1);
                 }
             }
         }
