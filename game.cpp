@@ -184,7 +184,6 @@ void render(uint32_t time)
     r3d.set_model_view(m);*/
     r3d.set_model_view(Mat4::translation(Vec3(0.0f, 0.0f, -4.0f)) * Mat4::rotation(ang, Vec3{0.0f, 1.0f, 0.0f}) * Mat4::rotation(ang2, Vec3{1.0f, 0.0f, 0.0f}));
 
-    r3d.clear();
     r3d.set_vertex_stride(6);
 
     auto vert_start = now_us();

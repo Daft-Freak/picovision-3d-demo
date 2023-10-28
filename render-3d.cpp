@@ -31,14 +31,6 @@ Pen operator +(Pen p, PenDelta d)
     return {p.r + d.r, p.g + d.g, p.b + d.b, p.a + d.a};
 }
 
-void Render3D::clear()
-{
-    //memset(framebuffer, 0, 320 * 240 * 3);
-    screen.pen = {127, 127, 127};
-    screen.clear();
-    memset(depth_buffer, 0xFF, 320 * 240 * 2);
-}
-
 void Render3D::draw(int count, const float *ptr)
 {
     if(!transformed_vertex_ptr)
@@ -108,8 +100,38 @@ void Render3D::rasterise()
     if(!transformed_vertex_ptr)
         return;
 
-    for(auto ptr = transformed_vertices; ptr != transformed_vertex_ptr; ptr += 3)
-        fill_triangle(ptr);
+    // rasterise triangles for each screen tile
+    for(int y = 0; y < screen.bounds.h; y += tile_height)
+    {
+        for(int x = 0; x < screen.bounds.w; x += tile_width)
+        {
+            // clear
+            // TODO: load/store for multi-pass? (UNLIMITED PO... triangles)
+            uint16_t clear_col = pack_colour({127, 127, 127});
+
+            for(auto &c : tile_colour_buffer)
+                c = clear_col;
+    
+            memset(tile_depth_buffer, 0xFF, tile_width * tile_height * 2);
+
+            // now the triangles
+            for(auto ptr = transformed_vertices; ptr != transformed_vertex_ptr; ptr += 3)
+                fill_triangle(ptr, {x, y});
+
+            // store colour tile
+            // TODO: optimise based on screen format
+            for(int ty = 0; ty < tile_height; ty++)
+            {
+                for(int tx = 0; tx < tile_width; tx++)
+                {
+                    // SLOOOOOOW
+                    screen.pen = unpack_colour(tile_colour_buffer[tx + ty * tile_width]);
+                    screen.pixel({x + tx, y + ty});
+                }
+            }
+        }
+    }
+
 
     transformed_vertex_ptr = nullptr;
 }
@@ -129,7 +151,7 @@ void Render3D::transform_vertex(VertexOutData &pos)
     pos.z = (pos.z + 1.0f) * 32767.5f;
 }
 
-void Render3D::fill_triangle(VertexOutData *data)
+void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
 {
     Pen cols[3]{
         {data[0].r, data[0].g, data[0].b},
@@ -191,7 +213,7 @@ void Render3D::fill_triangle(VertexOutData *data)
             auto startZ = p0.z + int32_t(yD1 * p2M0.z);
             auto endZ   = p0.z + int32_t(yD2 * p1M0.z);
 
-            gradient_h_line(startX, endX, startZ, endZ, y + p0.y, cols[0] + col2M0 * yD1, cols[0] + col1M0 * yD2);
+            gradient_h_line(startX - tile_pos.x, endX - tile_pos.x, startZ, endZ, y + p0.y - tile_pos.y, cols[0] + col2M0 * yD1, cols[0] + col1M0 * yD2);
         }
 
     }
@@ -211,7 +233,7 @@ void Render3D::fill_triangle(VertexOutData *data)
             auto startZ = p0.z + int32_t(yD1 * p2M0.z);
             auto endZ   = p1.z + int32_t(yD2 * p2M1.z);
 
-            gradient_h_line(startX, endX, startZ, endZ, y + p1.y, cols[0] + col2M0 * yD1, cols[1] + col2M1 * yD2);
+            gradient_h_line(startX - tile_pos.x, endX - tile_pos.x, startZ, endZ, y + p1.y - tile_pos.y, cols[0] + col2M0 * yD1, cols[1] + col2M1 * yD2);
         }
     }
     
@@ -219,7 +241,7 @@ void Render3D::fill_triangle(VertexOutData *data)
 
 void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, Pen col1, Pen col2)
 {
-    if(y < 0 || y >= 240)
+    if(y < 0 || y >= tile_height)
         return;
 
     if(x1 > x2)
@@ -231,21 +253,40 @@ void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, 
 
     for(int x = x1; x < x2; x++)
     {
-        if(x < 0 || x >= 320)
+        if(x < 0 || x >= tile_width)
             continue;
 
         auto xD = Fixed32<>(x - x1) / (x2 - x1);
 
         auto z = z1 + int32_t(xD * (z2 - z1));
 
-        if(z > depth_buffer[x + y * 320])
+        if(z > tile_depth_buffer[x + y * tile_width])
             continue;
 
         auto col = col1 + (col2 - col1) * xD;
 
-        screen.pen = col;
-        screen.pixel({x, y});
+        tile_colour_buffer[x + y * tile_width] = pack_colour(col);
 
-        depth_buffer[x + y * 320] = z;
+        tile_depth_buffer[x + y * tile_width] = z;
     }
+}
+
+uint16_t Render3D::pack_colour(Pen p)
+{
+    // 565
+    return (p.r >> 3) | ((p.g >> 2) << 5) | ((p.b >> 3) << 11);
+}
+
+blit::Pen Render3D::unpack_colour(uint16_t c)
+{
+    // 565
+    uint8_t r = c & 0x1F;
+    uint8_t g = (c >> 5) & 0x3F;
+    uint8_t b = c >> 11;
+
+    r = r << 3 | r >> 2;
+    g = g << 2 | g >> 4;
+    b = b << 3 | b >> 2;
+
+    return {r, g, b};
 }

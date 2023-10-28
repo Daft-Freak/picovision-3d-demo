@@ -15,8 +15,6 @@ public:
 
     using VertexShaderFunc = void(*)(const float *, VertexOutData *, const Render3D &);
 
-    void clear();
-
     void draw(int count, const float *ptr);
 
     const blit::Mat4 &get_model_view() const;
@@ -36,12 +34,13 @@ public:
 protected:
     void transform_vertex(VertexOutData &pos);
 
-    void fill_triangle(VertexOutData *data);
+    void fill_triangle(VertexOutData *data, blit::Point tile_pos);
 
     void gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, blit::Pen col1, blit::Pen col2);
 
-    //uint8_t framebuffer[320 * 240 * 3];
-    uint16_t depth_buffer[320 * 240];
+    uint16_t pack_colour(blit::Pen p);
+    blit::Pen unpack_colour(uint16_t c);
+
     blit::Mat4 model_view, projection;
     FixedMat4<> mvp;
 
@@ -50,4 +49,8 @@ protected:
 
     VertexOutData transformed_vertices[1024];
     VertexOutData *transformed_vertex_ptr = nullptr;
+
+    static constexpr int tile_width = 80, tile_height = 80;
+    uint16_t tile_colour_buffer[tile_width * tile_height];
+    uint16_t tile_depth_buffer[tile_width * tile_height];
 };
