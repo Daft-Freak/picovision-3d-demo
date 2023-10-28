@@ -222,25 +222,30 @@ void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, 
     if(y < 0 || y >= 240)
         return;
 
-    int sign = x1 > x2 ? -1 : 1;
-
-    for(int x = 0; x != x2 - x1; x += sign)
+    if(x1 > x2)
     {
-        if(x1 + x < 0 || x1 + x >= 320)
+        std::swap(x1, x2);
+        std::swap(z1, z2);
+        std::swap(col1, col2);
+    }
+
+    for(int x = x1; x < x2; x++)
+    {
+        if(x < 0 || x >= 320)
             continue;
 
-        auto xD = Fixed32<>(x) / (x2 - x1);
+        auto xD = Fixed32<>(x - x1) / (x2 - x1);
 
         auto z = z1 + int32_t(xD * (z2 - z1));
 
-        if(z > depth_buffer[x1 + x + y * 320])
+        if(z > depth_buffer[x + y * 320])
             continue;
 
         auto col = col1 + (col2 - col1) * xD;
 
         screen.pen = col;
-        screen.pixel({x1 + x, y});
+        screen.pixel({x, y});
 
-        depth_buffer[x1 + x + y * 320] = z;
+        depth_buffer[x + y * 320] = z;
     }
 }
