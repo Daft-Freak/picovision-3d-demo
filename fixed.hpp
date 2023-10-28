@@ -10,6 +10,8 @@ public:
 
     // conversions to fixed
     constexpr Fixed(T int_val) : val(int_val << frac_bits) {}
+    template<class U, std::enable_if_t<std::is_integral_v<U>, bool> = true>
+    constexpr Fixed(U int_val) : val(int_val << frac_bits) {}
     constexpr Fixed(float float_val) : val(float_val * (1 << frac_bits)) {}
 
     template<class T2, int frac_bits2>
