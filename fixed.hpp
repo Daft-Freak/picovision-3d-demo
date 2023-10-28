@@ -91,10 +91,24 @@ public:
         return res;
     }
 
+    constexpr SameFixed operator *(int i) const
+    {
+        auto res = *this;
+        res *= i;
+        return res;
+    }
+
     constexpr SameFixed operator /(SameFixed f) const
     {
         auto res = *this;
         res /= f;
+        return res;
+    }
+
+    constexpr SameFixed operator /(int i) const
+    {
+        auto res = *this;
+        res /= i;
         return res;
     }
 
