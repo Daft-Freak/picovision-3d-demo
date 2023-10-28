@@ -81,8 +81,8 @@ void Render3D::transform_vertex(VertexOutData &pos)
     Rect viewport{0, 0, 320, 240};
 
     // viewport
-    pos.x = viewport.x + (pos.x * 0.5f + 0.5f) * viewport.w;
-    pos.y = viewport.y + (pos.y * 0.5f + 0.5f) * viewport.h;
+    pos.x = Fixed32<>(viewport.x) + (pos.x * 0.5f + 0.5f) * viewport.w;
+    pos.y = Fixed32<>(viewport.y) + (pos.y * 0.5f + 0.5f) * viewport.h;
     pos.z = (pos.z + 1.0f) * 32767.5f;
 }
 
@@ -93,11 +93,21 @@ void Render3D::fill_triangle(VertexOutData *data)
         {data[1].r, data[1].g, data[1].b},
         {data[2].r, data[2].g, data[2].b}
     };
+    
+    struct IntVec3
+    {
+        int32_t x, y, z;
 
+        IntVec3 operator -(const IntVec3 &v)
+        {
+            return {x - v.x, y - v.y, z - v.z};
+        }
+    };
+    
     // sort points
-    Vec3 p0{std::floor(data[0].x), float(data[0].y), std::floor(data[0].z)};
-    Vec3 p1{std::floor(data[1].x), float(data[1].y), std::floor(data[1].z)};
-    Vec3 p2{std::floor(data[2].x), float(data[2].y), std::floor(data[2].z)};
+    IntVec3 p0{int32_t(data[0].x), int32_t(data[0].y), int32_t(UFixed32<>(data[0].z))};
+    IntVec3 p1{int32_t(data[1].x), int32_t(data[1].y), int32_t(UFixed32<>(data[1].z))};
+    IntVec3 p2{int32_t(data[2].x), int32_t(data[2].y), int32_t(UFixed32<>(data[2].z))};
 
     if(p0.y > p2.y)
     {
@@ -126,18 +136,18 @@ void Render3D::fill_triangle(VertexOutData *data)
     {
         for(int y = 0; y <= p1M0.y; y++)
         {
-            float yD1 = y / (p2.y - p0.y);
-            float yD2 = y / p1M0.y;
-            auto startX = p0.x + (p2.x - p0.x) * yD1;
-            auto endX   = p0.x + p1M0.x * yD2;
+            auto yD1 = Fixed32<>(y) / (p2.y - p0.y);
+            auto yD2 = Fixed32<>(y) / p1M0.y;
+            auto startX = int32_t(Fixed32<>(p0.x) + yD1 * (p2.x - p0.x));
+            auto endX   = int32_t(Fixed32<>(p0.x) + yD2 * p1M0.x);
 
             if(endX - startX == 0)
                 continue;
 
-            auto startZ = p0.z + (p2.z - p0.z) * yD1;
-            auto endZ   = p0.z + p1M0.z * yD2;
+            auto startZ = p0.z + int32_t(yD1 * (p2.z - p0.z));
+            auto endZ   = p0.z + int32_t(yD2 * p1M0.z);
 
-            gradient_h_line(startX, endX, startZ, endZ, y + p0.y, cols[0] + col2M0 * yD1, cols[0] + col1M0 * yD2);
+            gradient_h_line(startX, endX, startZ, endZ, y + p0.y, cols[0] + col2M0 * float(yD1), cols[0] + col1M0 * float(yD2));
         }
 
     }
@@ -146,24 +156,24 @@ void Render3D::fill_triangle(VertexOutData *data)
     {
         for(int y = 0; y <= p2M1.y; y++)
         {
-            float yD1 = (y + p1M0.y) / (p2.y - p0.y);
-            float yD2 = y / p2M1.y;
-            auto startX = p0.x + (p2.x - p0.x) * yD1;
-            auto endX   = p1.x + p2M1.x * yD2;
+            auto yD1 = Fixed32<>(y + p1M0.y) / (p2.y - p0.y);
+            auto yD2 = Fixed32<>(y) / p2M1.y;
+            auto startX = int32_t(Fixed32<>(p0.x) + yD1 * (p2.x - p0.x));
+            auto endX   = int32_t(Fixed32<>(p1.x) + yD2 * p2M1.x);
 
             if(endX - startX == 0)
                 continue;
 
-            auto startZ = p0.z + (p2.z - p0.z) * yD1;
-            auto endZ   = p1.z + p2M1.z * yD2;
+            auto startZ = p0.z + int32_t(yD1 * (p2.z - p0.z));
+            auto endZ   = p1.z + int32_t(yD2 * p2M1.z);
 
-            gradient_h_line(startX, endX, startZ, endZ, y + p1.y, cols[0] + col2M0 * yD1, cols[1] + col2M1 * yD2);
+            gradient_h_line(startX, endX, startZ, endZ, y + p1.y, cols[0] + col2M0 * float(yD1), cols[1] + col2M1 * float(yD2));
         }
     }
     
 }
 
-void Render3D::gradient_h_line(int x1, int x2, float z1, float z2, int y, const Vec3 &col1, const Vec3 &col2)
+void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, const Vec3 &col1, const Vec3 &col2)
 {
     if(y < 0 || y >= 240)
         return;
@@ -175,14 +185,14 @@ void Render3D::gradient_h_line(int x1, int x2, float z1, float z2, int y, const 
         if(x1 + x < 0 || x1 + x >= 320)
             continue;
 
-        float xD = static_cast<float>(x) / (x2 - x1);
+        auto xD = Fixed32<>(x) / (x2 - x1);
 
-        auto z = z1 + (z2 - z1) * xD;
+        auto z = z1 + int32_t(xD * (z2 - z1));
 
         if(z > depth_buffer[x1 + x + y * 320])
             continue;
 
-        auto col = col1 + (col2 - col1) * xD;
+        auto col = col1 + (col2 - col1) * float(xD);
 
         screen.pen = {col.x, col.y, col.z};
         screen.pixel({x1 + x, y});

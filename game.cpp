@@ -42,10 +42,10 @@ void noColShader(const float *in, Render3D::VertexOutData *out, const Render3D &
     tmp = r.get_model_view_projection() * tmp;
 
     // pos
-    out->x = float(tmp.x);
-    out->y = float(tmp.y);
-    out->z = float(tmp.z);
-    out->w = float(tmp.w);
+    out->x = tmp.x;
+    out->y = tmp.y;
+    out->z = tmp.z;
+    out->w = tmp.w;
 
     // col
     out->r = 1.0f;
@@ -63,10 +63,10 @@ void colPassthroughShader(const float *in, Render3D::VertexOutData *out, const R
     tmp = r.get_model_view_projection() * tmp;
 
     // pos
-    out->x = float(tmp.x);
-    out->y = float(tmp.y);
-    out->z = float(tmp.z);
-    out->w = float(tmp.w);
+    out->x = tmp.x;
+    out->y = tmp.y;
+    out->z = tmp.z;
+    out->w = tmp.w;
 
     // col
     out->r = in[3];
@@ -84,10 +84,10 @@ void litShader(const float *in, Render3D::VertexOutData *out, const Render3D &r)
     tmp = r.get_model_view_projection() * tmp;
 
     // pos
-    out->x = float(tmp.x);
-    out->y = float(tmp.y);
-    out->z = float(tmp.z);
-    out->w = float(tmp.w);
+    out->x = tmp.x;
+    out->y = tmp.y;
+    out->z = tmp.z;
+    out->w = tmp.w;
 
     // col
     Vec3 light(-0.577350269f, -0.577350269f, -0.577350269f);
