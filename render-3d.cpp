@@ -100,6 +100,11 @@ void Render3D::rasterise()
     if(!transformed_vertex_ptr)
         return;
 
+    uint16_t clear_col = pack_colour({127, 127, 127});
+
+    uint32_t clear_col32 = clear_col | clear_col << 16;
+    uint32_t clear_depth32 = 0xFFFFFFFF;
+
     // rasterise triangles for each screen tile
     for(int y = 0; y < screen.bounds.h; y += tile_height)
     {
@@ -107,13 +112,14 @@ void Render3D::rasterise()
         {
             // clear
             // TODO: load/store for multi-pass? (UNLIMITED PO... triangles)
-            uint16_t clear_col = pack_colour({127, 127, 127});
+            auto tile_ptr32 = reinterpret_cast<uint32_t *>(tile_colour_buffer);
+            for(size_t i = 0; i < sizeof(tile_colour_buffer) / 4; i++)
+                *tile_ptr32++ = clear_col32;
 
-            for(auto &c : tile_colour_buffer)
-                c = clear_col;
+            tile_ptr32 = reinterpret_cast<uint32_t *>(tile_depth_buffer);
+            for(size_t i = 0; i < sizeof(tile_depth_buffer) / 4; i++)
+                *tile_ptr32++ = clear_depth32;
     
-            memset(tile_depth_buffer, 0xFF, tile_width * tile_height * 2);
-
             // now the triangles
             for(auto ptr = transformed_vertices; ptr != transformed_vertex_ptr; ptr += 3)
                 fill_triangle(ptr, {x, y});
