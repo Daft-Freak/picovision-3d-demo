@@ -188,22 +188,22 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
         }
     };
 
-    IntVec3 p0{int32_t(data[0].x), int32_t(data[0].y), int32_t(UFixed32<>(data[0].z))};
-    IntVec3 p1{int32_t(data[1].x), int32_t(data[1].y), int32_t(UFixed32<>(data[1].z))};
-    IntVec3 p2{int32_t(data[2].x), int32_t(data[2].y), int32_t(UFixed32<>(data[2].z))};
+    IntVec3 p0{int32_t(data[0].x) - tile_pos.x, int32_t(data[0].y) - tile_pos.y, int32_t(UFixed32<>(data[0].z))};
+    IntVec3 p1{int32_t(data[1].x) - tile_pos.x, int32_t(data[1].y) - tile_pos.y, int32_t(UFixed32<>(data[1].z))};
+    IntVec3 p2{int32_t(data[2].x) - tile_pos.x, int32_t(data[2].y) - tile_pos.y, int32_t(UFixed32<>(data[2].z))};
 
     // check if outside tile
     auto get_outside_sides = [&](IntVec3 &p)
     {
         int ret = 0;
-        if(p.x < tile_pos.x)
+        if(p.x < 0)
             ret = 1;
-        else if(p.x >= tile_pos.x + tile_width)
+        else if(p.x >= tile_width)
             ret = 2;
 
-        if(p.y < tile_pos.y)
+        if(p.y < 0)
             ret += 4;
-        else if(p.y >= tile_pos.y + tile_height)
+        else if(p.y >= tile_height)
             ret += 8;
 
         return ret;
@@ -261,16 +261,16 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
 
         // clamp to tile
         int y_start = p0.y;
-        int y_end = std::min(p1.y, tile_pos.y + tile_height);
+        int y_end = std::min(p1.y, int32_t(tile_height));
 
-        if(y_start < tile_pos.y)
+        if(y_start < 0)
         {
-            start_x += start_x_step * (tile_pos.y - y_start);
-            end_x += end_x_step * (tile_pos.y - y_start);
+            start_x += start_x_step * -y_start;
+            end_x += end_x_step * -y_start;
 
-            y_frac1 += y_step1 * (tile_pos.y - y_start);
-            y_frac2 += y_step2 * (tile_pos.y - y_start);
-            y_start = tile_pos.y;
+            y_frac1 += y_step1 * -y_start;
+            y_frac2 += y_step2 * -y_start;
+            y_start = 0;
         }
 
         for(int y = y_start; y <= y_end; y++, start_x += start_x_step, end_x += end_x_step, y_frac1 += y_step1, y_frac2 += y_step2)
@@ -284,7 +284,7 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
             auto start_col = cols[0] + col2M0 * y_frac1;
             auto end_col = cols[0] + col1M0 * y_frac2;
 
-            gradient_h_line(int32_t(start_x) - tile_pos.x, int32_t(end_x) - tile_pos.x, start_z, end_z, y - tile_pos.y, start_col, end_col);
+            gradient_h_line(int32_t(start_x), int32_t(end_x), start_z, end_z, y, start_col, end_col);
         }
     }
 
@@ -302,16 +302,16 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
 
         // clamp to tile
         int y_start = p1.y;
-        int y_end = std::min(p2.y, tile_pos.y + tile_height);
+        int y_end = std::min(p2.y, int32_t(tile_height));
 
-        if(y_start < tile_pos.y)
+        if(y_start < 0)
         {
-            start_x += start_x_step * (tile_pos.y - y_start);
-            end_x += end_x_step * (tile_pos.y - y_start);
+            start_x += start_x_step * -y_start;
+            end_x += end_x_step * -y_start;
 
-            y_frac1 += y_step1 * (tile_pos.y - y_start);
-            y_frac2 += y_step2 * (tile_pos.y - y_start);
-            y_start = tile_pos.y;
+            y_frac1 += y_step1 * -y_start;
+            y_frac2 += y_step2 * -y_start;
+            y_start = 0;
         }
 
         for(int y = y_start; y <= y_end; y++, start_x += start_x_step, end_x += end_x_step, y_frac1 += y_step1, y_frac2 += y_step2)
@@ -325,10 +325,9 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
             auto start_col = cols[0] + col2M0 * y_frac1;
             auto end_col = cols[1] + col2M1 * y_frac2;
 
-            gradient_h_line(int32_t(start_x) - tile_pos.x, int32_t(end_x) - tile_pos.x, start_z, end_z, y - tile_pos.y, start_col, end_col);
+            gradient_h_line(int32_t(start_x), int32_t(end_x), start_z, end_z, y, start_col, end_col);
         }
     }
-    
 }
 
 void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, Pen col1, Pen col2)
