@@ -172,12 +172,6 @@ void Render3D::transform_vertex(VertexOutData &pos)
 
 void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
 {
-    Pen cols[3]{
-        {data[0].r, data[0].g, data[0].b},
-        {data[1].r, data[1].g, data[1].b},
-        {data[2].r, data[2].g, data[2].b}
-    };
-    
     struct IntVec3
     {
         int32_t x, y, z;
@@ -222,6 +216,12 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
     if(z < 0)
         return;
 
+    Pen cols[3]{
+        {data[0].r, data[0].g, data[0].b},
+        {data[1].r, data[1].g, data[1].b},
+        {data[2].r, data[2].g, data[2].b}
+    };
+
     // sort points
     if(p0.y > p2.y)
     {
@@ -243,20 +243,23 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
     auto p2M0 = p2 - p0;
     auto p2M1 = p2 - p1;
 
-    auto col1M0 = cols[1] - cols[0];
     auto col2M0 = cols[2] - cols[0];
-    auto col2M1 = cols[2] - cols[1];
 
-    if(p1M0.y)
+    auto start_x_step = Fixed32<>(p2M0.x) / p2M0.y;
+    auto start_x = Fixed32<>(p0.x);
+
+    auto y_step1 = Fixed32<>(1) / p2M0.y;
+    Fixed32<> y_frac1 = 0;
+
+    if(p1M0.y && p1.y > 0)
     {
-        auto start_x_step = Fixed32<>(p2M0.x) / p2M0.y;
+        auto col1M0 = cols[1] - cols[0];
+
         auto end_x_step = Fixed32<>(p1M0.x) / p1M0.y;
-        auto start_x = Fixed32<>(p0.x);
         auto end_x = start_x;
 
-        auto y_step1 = Fixed32<>(1) / p2M0.y;
         auto y_step2 = Fixed32<>(1) / p1M0.y;
-        Fixed32<> y_frac1 = 0;
+
         Fixed32<> y_frac2 = 0;
 
         // clamp to tile
@@ -273,7 +276,7 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
             y_start = 0;
         }
 
-        for(int y = y_start; y <= y_end; y++, start_x += start_x_step, end_x += end_x_step, y_frac1 += y_step1, y_frac2 += y_step2)
+        for(int y = y_start; y < y_end; y++, start_x += start_x_step, end_x += end_x_step, y_frac1 += y_step1, y_frac2 += y_step2)
         {
             if(int32_t(start_x) == int32_t(end_x))
                 continue;
@@ -287,17 +290,21 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
             gradient_h_line(int32_t(start_x), int32_t(end_x), start_z, end_z, y, start_col, end_col);
         }
     }
-
-    if(p2M1.y)
+    else if(p1M0.y)
     {
-        auto start_x_step = Fixed32<>(p2M0.x) / p2M0.y;
+        // still need to adjust these for the second part
+        start_x += start_x_step * p1M0.y;
+        y_frac1 += y_step1 * p1M0.y;
+    }
+
+    if(p2M1.y && p1.y < tile_height)
+    {
+        auto col2M1 = cols[2] - cols[1];
+
         auto end_x_step = Fixed32<>(p2M1.x) / p2M1.y;
-        auto start_x = Fixed32<>(p0.x) + start_x_step * p1M0.y;
         auto end_x = Fixed32<>(p1.x);
 
-        auto y_step1 = Fixed32<>(1) / p2M0.y;
         auto y_step2 = Fixed32<>(1) / p2M1.y;
-        Fixed32<> y_frac1 = y_step1 * p1M0.y;
         Fixed32<> y_frac2 = 0;
 
         // clamp to tile
@@ -314,7 +321,7 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
             y_start = 0;
         }
 
-        for(int y = y_start; y <= y_end; y++, start_x += start_x_step, end_x += end_x_step, y_frac1 += y_step1, y_frac2 += y_step2)
+        for(int y = y_start; y < y_end; y++, start_x += start_x_step, end_x += end_x_step, y_frac1 += y_step1, y_frac2 += y_step2)
         {
             if(int32_t(start_x) == int32_t(end_x))
                 continue;
