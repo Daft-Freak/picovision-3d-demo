@@ -23,7 +23,7 @@ struct PenDelta
 
 PenDelta operator -(Pen a, Pen b)
 {
-    return {a.r - b.r, a.b - b.b, a.g - b.g, a.a - b.a};
+    return {a.r - b.r, a.g - b.g, a.b - b.b, a.a - b.a};
 }
 
 Pen operator +(Pen p, PenDelta d)
