@@ -188,11 +188,20 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
         }
     };
 
-    // sort points
     IntVec3 p0{int32_t(data[0].x), int32_t(data[0].y), int32_t(UFixed32<>(data[0].z))};
     IntVec3 p1{int32_t(data[1].x), int32_t(data[1].y), int32_t(UFixed32<>(data[1].z))};
     IntVec3 p2{int32_t(data[2].x), int32_t(data[2].y), int32_t(UFixed32<>(data[2].z))};
 
+    // back-face culling
+    auto ab = p1 - p0;
+    auto ac = p2 - p0;
+
+    int32_t z = ab.x * ac.y - ab.y * ac.x;
+
+    if(z < 0)
+        return;
+
+    // sort points
     if(p0.y > p2.y)
     {
         std::swap(p0, p2);
