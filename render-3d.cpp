@@ -192,6 +192,27 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
     IntVec3 p1{int32_t(data[1].x), int32_t(data[1].y), int32_t(UFixed32<>(data[1].z))};
     IntVec3 p2{int32_t(data[2].x), int32_t(data[2].y), int32_t(UFixed32<>(data[2].z))};
 
+    // check if outside tile
+    auto get_outside_sides = [&](IntVec3 &p)
+    {
+        int ret = 0;
+        if(p.x < tile_pos.x)
+            ret = 1;
+        else if(p.x >= tile_pos.x + tile_width)
+            ret = 2;
+
+        if(p.y < tile_pos.y)
+            ret += 4;
+        else if(p.y >= tile_pos.y + tile_height)
+            ret += 8;
+
+        return ret;
+    };
+
+    // all points outside on the same side
+    if(get_outside_sides(p0) & get_outside_sides(p1) & get_outside_sides(p2))
+        return;
+
     // back-face culling
     auto ab = p1 - p0;
     auto ac = p2 - p0;
