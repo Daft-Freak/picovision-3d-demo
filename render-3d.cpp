@@ -337,18 +337,31 @@ void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, 
     auto g = Fixed32<>(col1.g);
     auto b = Fixed32<>(col1.b);
 
-    for(int x = x1; x < x2; x++, z += z_step, r += r_step, g += g_step, b += b_step)
-    {
-        if(x < 0 || x >= tile_width)
-            continue;
+    // clamp x
+    if(x2 > tile_width)
+        x2 = tile_width;
 
-        if(int32_t(z) > tile_depth_buffer[x + y * tile_width])
+    if(x1 < 0)
+    {
+        z += z_step * -x1;
+        r += r_step * -x1;
+        g += g_step * -x1;
+        b += b_step * -x1;
+        x1 = 0;
+    }
+
+    auto col_ptr = tile_colour_buffer + x1 + y * tile_width;
+    auto depth_ptr = tile_depth_buffer + x1 + y * tile_width;
+
+    for(int x = x1; x < x2; x++, col_ptr++, depth_ptr++, z += z_step, r += r_step, g += g_step, b += b_step)
+    {
+        if(int32_t(z) > *depth_ptr)
             continue;
 
         Pen col{uint8_t(r), uint8_t(g), uint8_t(b)};
 
-        tile_colour_buffer[x + y * tile_width] = pack_colour(col);
-        tile_depth_buffer[x + y * tile_width] = int32_t(z);
+        *col_ptr = pack_colour(col);
+        *depth_ptr = int32_t(z);
     }
 }
 
