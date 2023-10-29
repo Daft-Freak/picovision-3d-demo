@@ -256,27 +256,36 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
 
         auto y_step1 = Fixed32<>(1) / p2M0.y;
         auto y_step2 = Fixed32<>(1) / p1M0.y;
+        Fixed32<> y_frac1 = 0;
+        Fixed32<> y_frac2 = 0;
 
-        for(int y = 0; y <= p1M0.y; y++, start_x += start_x_step, end_x += end_x_step)
+        // clamp to tile
+        int y_start = p0.y;
+        int y_end = std::min(p1.y, tile_pos.y + tile_height);
+
+        if(y_start < tile_pos.y)
         {
-            if(y + p0.y < tile_pos.y)
-                continue;
+            start_x += start_x_step * (tile_pos.y - y_start);
+            end_x += end_x_step * (tile_pos.y - y_start);
 
-            if(y + p0.y >= tile_pos.y + tile_height)
-                break;
+            y_frac1 += y_step1 * (tile_pos.y - y_start);
+            y_frac2 += y_step2 * (tile_pos.y - y_start);
+            y_start = tile_pos.y;
+        }
 
+        for(int y = y_start; y <= y_end; y++, start_x += start_x_step, end_x += end_x_step, y_frac1 += y_step1, y_frac2 += y_step2)
+        {
             if(int32_t(start_x) == int32_t(end_x))
                 continue;
 
-            auto yD1 = Fixed32<>(y) * y_step1;
-            auto yD2 = Fixed32<>(y) * y_step2;
+            auto start_z = p0.z + int32_t(y_frac1 * p2M0.z);
+            auto end_z   = p0.z + int32_t(y_frac2 * p1M0.z);
 
-            auto startZ = p0.z + int32_t(yD1 * p2M0.z);
-            auto endZ   = p0.z + int32_t(yD2 * p1M0.z);
+            auto start_col = cols[0] + col2M0 * y_frac1;
+            auto end_col = cols[0] + col1M0 * y_frac2;
 
-            gradient_h_line(int32_t(start_x) - tile_pos.x, int32_t(end_x) - tile_pos.x, startZ, endZ, y + p0.y - tile_pos.y, cols[0] + col2M0 * yD1, cols[0] + col1M0 * yD2);
+            gradient_h_line(int32_t(start_x) - tile_pos.x, int32_t(end_x) - tile_pos.x, start_z, end_z, y - tile_pos.y, start_col, end_col);
         }
-
     }
 
     if(p2M1.y)
@@ -288,25 +297,35 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
 
         auto y_step1 = Fixed32<>(1) / p2M0.y;
         auto y_step2 = Fixed32<>(1) / p2M1.y;
+        Fixed32<> y_frac1 = y_step1 * p1M0.y;
+        Fixed32<> y_frac2 = 0;
 
-        for(int y = 0; y <= p2M1.y; y++, start_x += start_x_step, end_x += end_x_step)
+        // clamp to tile
+        int y_start = p1.y;
+        int y_end = std::min(p2.y, tile_pos.y + tile_height);
+
+        if(y_start < tile_pos.y)
         {
-            if(y + p1.y < tile_pos.y)
-                continue;
-                
-            if(y + p1.y >= tile_pos.y + tile_height)
-                break;
+            start_x += start_x_step * (tile_pos.y - y_start);
+            end_x += end_x_step * (tile_pos.y - y_start);
 
+            y_frac1 += y_step1 * (tile_pos.y - y_start);
+            y_frac2 += y_step2 * (tile_pos.y - y_start);
+            y_start = tile_pos.y;
+        }
+
+        for(int y = y_start; y <= y_end; y++, start_x += start_x_step, end_x += end_x_step, y_frac1 += y_step1, y_frac2 += y_step2)
+        {
             if(int32_t(start_x) == int32_t(end_x))
                 continue;
 
-            auto yD1 = Fixed32<>(y + p1M0.y) * y_step1;
-            auto yD2 = Fixed32<>(y) * y_step2;
+            auto start_z = p0.z + int32_t(y_frac1 * p2M0.z);
+            auto end_z   = p1.z + int32_t(y_frac2 * p2M1.z);
 
-            auto startZ = p0.z + int32_t(yD1 * p2M0.z);
-            auto endZ   = p1.z + int32_t(yD2 * p2M1.z);
+            auto start_col = cols[0] + col2M0 * y_frac1;
+            auto end_col = cols[1] + col2M1 * y_frac2;
 
-            gradient_h_line(int32_t(start_x) - tile_pos.x, int32_t(end_x) - tile_pos.x, startZ, endZ, y + p1.y - tile_pos.y, cols[0] + col2M0 * yD1, cols[1] + col2M1 * yD2);
+            gradient_h_line(int32_t(start_x) - tile_pos.x, int32_t(end_x) - tile_pos.x, start_z, end_z, y - tile_pos.y, start_col, end_col);
         }
     }
     
