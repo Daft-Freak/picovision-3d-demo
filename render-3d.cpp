@@ -346,17 +346,23 @@ void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, 
         std::swap(col1, col2);
     }
 
+    // the triangle may be in the tile, but this line is definitely not
+    if(x1 > tile_width || x2 < 0)
+        return;
+
+    auto x_scale = Fixed32<>(1) / (x2 - x1);
+
     // depth
     int z_diff = z2 - z1;
-    auto z_step = Fixed32<15>(z_diff) / (x2 - x1);
+    auto z_step = Fixed32<15>(x_scale) * z_diff;
     auto z = Fixed32<15>(z1);
 
     // colour
     auto col_diff = col2 - col1;
-    // could do some packing here...
-    auto r_step = Fixed32<>(col_diff.r) / (x2 - x1);
-    auto g_step = Fixed32<>(col_diff.g) / (x2 - x1);
-    auto b_step = Fixed32<>(col_diff.b) / (x2 - x1);
+
+    auto r_step = x_scale * col_diff.r;
+    auto g_step = x_scale * col_diff.g;
+    auto b_step = x_scale * col_diff.b;
 
     auto r = Fixed32<>(col1.r);
     auto g = Fixed32<>(col1.g);
@@ -378,7 +384,9 @@ void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, 
     auto col_ptr = tile_colour_buffer + x1 + y * tile_width;
     auto depth_ptr = tile_depth_buffer + x1 + y * tile_width;
 
-    for(int x = x1; x < x2; x++, col_ptr++, depth_ptr++, z += z_step, r += r_step, g += g_step, b += b_step)
+    auto end_ptr = col_ptr + (x2 - x1);
+
+    for(; col_ptr < end_ptr; col_ptr++, depth_ptr++, z += z_step, r += r_step, g += g_step, b += b_step)
     {
         if(int32_t(z) > *depth_ptr)
             continue;
