@@ -7,6 +7,7 @@
 #endif
 
 #include "engine/engine.hpp"
+#include "engine/fast_code.hpp"
 #include "types/vec3.hpp"
 
 #include "render-3d.hpp"
@@ -252,7 +253,7 @@ void Render3D::transform_vertex(VertexOutData &pos)
     pos.z = (pos.z + 1.0f) * Fixed32<>(32767.5f);
 }
 
-void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
+void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point tile_pos)
 {
     struct IntVec3
     {
@@ -450,7 +451,7 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
     }
 }
 
-void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, Pen col1, Pen col2)
+void blit_fast_code(Render3D::gradient_h_line)(int x1, int x2, uint16_t z1, uint16_t z2, int y, Pen col1, Pen col2)
 {
     if(x1 > x2)
     {
