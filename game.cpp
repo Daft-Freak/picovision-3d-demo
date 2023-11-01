@@ -4,11 +4,36 @@
 #include <cstring>
 
 #include "32blit.hpp"
+#include "engine/api_private.hpp"
 
 #include "render-3d.hpp"
 #include "vec4.hpp"
 
 using namespace blit;
+
+// copy/paste from an SDK branch so I can compile on master...
+bool set_screen_mode(ScreenMode new_mode, PixelFormat format, Size bounds) {
+    SurfaceTemplate new_screen;
+    new_screen.format = format;
+    new_screen.bounds = bounds;
+
+    if(!api.set_screen_mode_format(new_mode, new_screen))
+      return false;
+
+    screen = Surface(new_screen.data, new_screen.format, new_screen.bounds);
+    screen.palette = new_screen.palette;
+
+    if(new_screen.pen_blend)
+        screen.pbf = new_screen.pen_blend;
+    
+    if(new_screen.blit_blend)
+        screen.bbf = new_screen.blit_blend;
+
+    if(new_screen.pen_get)
+        screen.pgf = new_screen.pen_get;
+
+    return true;
+}
 
 // mat helpers
 
@@ -113,7 +138,9 @@ float ang = 0.0f, ang2 = 0.0f;
 
 void init()
 {
-    set_screen_mode(ScreenMode::hires);
+    // attempt to go super-hires on picovision
+    if(!::set_screen_mode(ScreenMode::hires, PixelFormat::BGR555, {640, 480}))
+        set_screen_mode(ScreenMode::hires);
 
     auto near = 0.1, far = 10.0;
     auto tanFov = tan(0.785398163);
