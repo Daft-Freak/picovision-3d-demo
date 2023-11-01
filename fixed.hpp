@@ -114,6 +114,14 @@ public:
 
     inline T raw() const {return val;}
 
+    static SameFixed from_raw(T val)
+    {
+        SameFixed ret;
+        ret.val = val;
+
+        return ret;
+    }
+
 private:
     T val;
 };
