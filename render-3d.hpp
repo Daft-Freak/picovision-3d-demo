@@ -53,8 +53,9 @@ protected:
     VertexOutData *transformed_vertex_ptr = nullptr;
 
     static constexpr int tile_width = 80, tile_height = 80;
-    uint16_t tile_colour_buffer[tile_width * tile_height];
-    uint16_t tile_depth_buffer[tile_width * tile_height];
+    static constexpr int num_tile_bufs = 1;
+    uint16_t tile_colour_buffer[tile_width * tile_height * num_tile_bufs];
+    uint16_t tile_depth_buffer[tile_width * tile_height * num_tile_bufs];
 
     // used for picovision blit
     blit::Surface tile_surf;

@@ -127,6 +127,11 @@ void Render3D::rasterise()
     uint32_t clear_col32 = clear_col | clear_col << 16;
     uint32_t clear_depth32 = 0xFFFFFFFF;
 
+    auto col_buf = tile_colour_buffer;
+    auto depth_buf = tile_depth_buffer;
+    const auto tile_buf_size = sizeof(tile_colour_buffer) / num_tile_bufs;
+
+
     // rasterise triangles for each screen tile
     for(int y = 0; y < screen.bounds.h; y += tile_height)
     {
@@ -134,12 +139,12 @@ void Render3D::rasterise()
         {
             // clear
             // TODO: load/store for multi-pass? (UNLIMITED PO... triangles)
-            auto tile_ptr32 = reinterpret_cast<uint32_t *>(tile_colour_buffer);
-            for(size_t i = 0; i < sizeof(tile_colour_buffer) / 4; i++)
+            auto tile_ptr32 = reinterpret_cast<uint32_t *>(col_buf);
+            for(size_t i = 0; i < tile_buf_size / 4; i++)
                 *tile_ptr32++ = clear_col32;
 
-            tile_ptr32 = reinterpret_cast<uint32_t *>(tile_depth_buffer);
-            for(size_t i = 0; i < sizeof(tile_depth_buffer) / 4; i++)
+            tile_ptr32 = reinterpret_cast<uint32_t *>(depth_buf);
+            for(size_t i = 0; i < tile_buf_size / 4; i++)
                 *tile_ptr32++ = clear_depth32;
     
             // now the triangles
@@ -161,7 +166,7 @@ void Render3D::rasterise()
                     auto offset = screen.offset(x, y + ty);
                     for(int tx = 0; tx < tile_width; tx++)
                     {
-                        auto pen = unpack_colour(tile_colour_buffer[tx + ty * tile_width]);
+                        auto pen = unpack_colour(col_buf[tx + ty * tile_width]);
 
                         screen.pbf(&pen, &screen, offset + tx, 1);
                     }
