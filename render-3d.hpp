@@ -58,7 +58,7 @@ protected:
     VertexOutData transformed_vertices[1024];
     VertexOutData *transformed_vertex_ptr = nullptr;
 
-    static constexpr int tile_width = 80, tile_height = 80;
+    static constexpr int tile_width = 160, tile_height = 80;
 #ifdef PICO_MULTICORE
     static constexpr int num_tile_bufs = 2;
 #else
