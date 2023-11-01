@@ -7,6 +7,11 @@
 
 using namespace blit;
 
+#ifdef PICO_BUILD
+#include "hardware/interp.h"
+#define PICO_INTERP
+#endif
+
 // helper for blending pens
 struct PenDelta
 {
@@ -102,6 +107,20 @@ void Render3D::rasterise()
 {
     if(!transformed_vertex_ptr)
         return;
+
+#ifdef PICO_INTERP
+    // setup interpolators
+    auto config = interp_default_config();
+
+    // start/end x in fill_triangle
+    interp_config_set_shift(&config, 16);     // shift out 16 fractional bits
+    interp_config_set_mask(&config, 0, 15);   // mask out the nothing in the upper 16 bits
+    interp_config_set_signed(&config, true);  // ... then sign extend (which is why we need the mask)
+    interp_config_set_add_raw(&config, true); // skip everything for the value stored to the accumulator
+
+    interp_set_config(interp0, 0, &config);
+    interp_set_config(interp0, 1, &config);
+#endif
 
     uint16_t clear_col = pack_colour({127, 127, 127});
 
@@ -276,8 +295,21 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
             y_start = 0;
         }
 
+#ifdef PICO_INTERP
+        interp0->accum[0] = start_x.raw();
+        interp0->base[0] = start_x_step.raw();
+        interp0->accum[1] = end_x.raw();
+        interp0->base[1] = end_x_step.raw();
+
+        for(int y = y_start; y < y_end; y++, y_frac1 += y_step1, y_frac2 += y_step2)
+        {
+            int32_t start_x = interp0->add_raw[0];
+            int32_t end_x = interp0->add_raw[1];
+            interp0->pop[0];
+#else
         for(int y = y_start; y < y_end; y++, start_x += start_x_step, end_x += end_x_step, y_frac1 += y_step1, y_frac2 += y_step2)
         {
+#endif
             if(int32_t(start_x) == int32_t(end_x))
                 continue;
 
@@ -289,6 +321,11 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
 
             gradient_h_line(int32_t(start_x), int32_t(end_x), start_z, end_z, y, start_col, end_col);
         }
+
+#ifdef PICO_INTERP
+        // read back out
+        start_x = Fixed32<>::from_raw(interp0->accum[0]);
+#endif
     }
     else if(p1M0.y)
     {
@@ -321,8 +358,21 @@ void Render3D::fill_triangle(VertexOutData *data, blit::Point tile_pos)
             y_start = 0;
         }
 
+#ifdef PICO_INTERP
+        interp0->accum[0] = start_x.raw();
+        interp0->base[0] = start_x_step.raw();
+        interp0->accum[1] = end_x.raw();
+        interp0->base[1] = end_x_step.raw();
+
+        for(int y = y_start; y < y_end; y++, y_frac1 += y_step1, y_frac2 += y_step2)
+        {
+            int32_t start_x = interp0->add_raw[0];
+            int32_t end_x = interp0->add_raw[1];
+            interp0->pop[0];
+#else
         for(int y = y_start; y < y_end; y++, start_x += start_x_step, end_x += end_x_step, y_frac1 += y_step1, y_frac2 += y_step2)
         {
+#endif
             if(int32_t(start_x) == int32_t(end_x))
                 continue;
 

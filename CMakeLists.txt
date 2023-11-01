@@ -27,6 +27,10 @@ blit_assets_yaml (${PROJECT_NAME} assets.yml)
 blit_metadata (${PROJECT_NAME} metadata.yml)
 add_custom_target (flash DEPENDS ${PROJECT_NAME}.flash)
 
+if(32BLIT_PICO)
+  target_link_libraries(${PROJECT_NAME} hardware_interp)
+endif()
+
 # setup release packages
 install (FILES ${PROJECT_DISTRIBS} DESTINATION .)
 set (CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
