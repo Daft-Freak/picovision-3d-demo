@@ -28,7 +28,7 @@ blit_metadata (${PROJECT_NAME} metadata.yml)
 add_custom_target (flash DEPENDS ${PROJECT_NAME}.flash)
 
 if(32BLIT_PICO)
-  target_link_libraries(${PROJECT_NAME} hardware_interp)
+  target_link_libraries(${PROJECT_NAME} hardware_interp pico_multicore pico_sync)
 endif()
 
 # setup release packages

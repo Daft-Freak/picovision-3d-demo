@@ -1,16 +1,17 @@
 #include <cstring>
 
+#ifdef PICO_BUILD
+#include "hardware/interp.h"
+#include "pico/multicore.h"
+#include "pico/sync.h"
+#endif
+
 #include "engine/engine.hpp"
 #include "types/vec3.hpp"
 
 #include "render-3d.hpp"
 
 using namespace blit;
-
-#ifdef PICO_BUILD
-#include "hardware/interp.h"
-#define PICO_INTERP
-#endif
 
 // helper for blending pens
 struct PenDelta
@@ -35,6 +36,22 @@ Pen operator +(Pen p, PenDelta d)
 {
     return {uint8_t(p.r + d.r), uint8_t(p.g + d.g), uint8_t(p.b + d.b), uint8_t(p.a + d.a)};
 }
+
+#ifdef PICO_MULTICORE
+auto_init_mutex(blit_mutex);
+
+static void core1_entry()
+{
+    // get renderer
+    auto render3d = reinterpret_cast<Render3D *>(multicore_fifo_pop_blocking());
+
+    // render the other half
+    render3d->rasterise();
+
+    // done
+    multicore_fifo_push_blocking(0);
+}
+#endif
 
 Render3D::Render3D() : tile_surf(reinterpret_cast<uint8_t *>(tile_colour_buffer), PixelFormat::BGR555, {tile_width, tile_height})
 {}
@@ -108,6 +125,16 @@ void Render3D::rasterise()
     if(!transformed_vertex_ptr)
         return;
 
+#ifdef PICO_MULTICORE
+    // launch the other core if needed
+    auto core_num = get_core_num();
+    if(core_num == 0)
+    {
+        multicore_launch_core1(core1_entry);
+        multicore_fifo_push_blocking(reinterpret_cast<uintptr_t>(this));
+    }
+#endif
+
 #ifdef PICO_INTERP
     // setup interpolators
     auto config = interp_default_config();
@@ -131,12 +158,23 @@ void Render3D::rasterise()
     auto depth_buf = tile_depth_buffer;
     const auto tile_buf_size = sizeof(tile_colour_buffer) / num_tile_bufs;
 
+#ifdef PICO_MULTICORE
+    // offset for per-core tile buffers
+    col_buf += core_num * tile_width * tile_height;
+    depth_buf += core_num * tile_width * tile_height;
+#endif
 
     // rasterise triangles for each screen tile
     for(int y = 0; y < screen.bounds.h; y += tile_height)
     {
         for(int x = 0; x < screen.bounds.w; x += tile_width)
         {
+#ifdef PICO_MULTICORE
+            // split tiles between cores
+            if((((x / tile_width) + (y / tile_height)) & 1) != core_num)
+                continue;
+#endif
+
             // clear
             // TODO: load/store for multi-pass? (UNLIMITED PO... triangles)
             auto tile_ptr32 = reinterpret_cast<uint32_t *>(col_buf);
@@ -155,7 +193,17 @@ void Render3D::rasterise()
             if(screen.format == PixelFormat::BGR555)
             {
                 // assume picovision, which has a 555 -> 555 blit
+#ifdef PICO_MULTICORE
+                // blitting on both cores at once would blow up
+                mutex_enter_blocking(&blit_mutex);
+#endif
+
+                tile_surf.data = reinterpret_cast<uint8_t *>(col_buf);
                 screen.blit(&tile_surf, {0, 0, tile_width, tile_height}, {x, y});
+
+#ifdef PICO_MULTICORE
+                mutex_exit(&blit_mutex);
+#endif
             }
             else
             {
@@ -175,6 +223,16 @@ void Render3D::rasterise()
         }
     }
 
+#ifdef PICO_MULTICORE
+    if(core_num == 0)
+    {
+        // wait for core1 and reset
+        multicore_fifo_pop_blocking();
+        multicore_reset_core1();
+    }
+    else
+        return; // don't reset vertex ptr on core1
+#endif
 
     transformed_vertex_ptr = nullptr;
 }
@@ -438,6 +496,12 @@ void Render3D::gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, 
 
     auto col_ptr = tile_colour_buffer + x1 + y * tile_width;
     auto depth_ptr = tile_depth_buffer + x1 + y * tile_width;
+
+#ifdef PICO_MULTICORE
+    auto core_num = get_core_num();
+    col_ptr += core_num * tile_width * tile_height;
+    depth_ptr += core_num * tile_width * tile_height;
+#endif
 
     auto end_ptr = col_ptr + (x2 - x1);
 
