@@ -66,7 +66,7 @@ void init()
 {
     // attempt to go super-hires on picovision
     if(!::set_screen_mode(ScreenMode::hires, PixelFormat::BGR555, {640, 480}))
-        set_screen_mode(ScreenMode::hires);
+        set_screen_mode(ScreenMode::hires, PixelFormat::RGB565);
 
     auto near = 0.1, far = 10.0;
     auto tanFov = tan(0.785398163);

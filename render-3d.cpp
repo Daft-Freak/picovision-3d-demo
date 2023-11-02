@@ -237,20 +237,6 @@ void Render3D::rasterise()
                 for(int ty = 0; ty < tile_height; ty++)
                     memcpy(screen.ptr(x, y + ty), col_buf + ty * tile_width, tile_width * 2);
             }
-            else
-            {
-                // fallback
-                for(int ty = 0; ty < tile_height; ty++)
-                {
-                    auto offset = screen.offset(x, y + ty);
-                    for(int tx = 0; tx < tile_width; tx++)
-                    {
-                        auto pen = unpack_colour(col_buf[tx + ty * tile_width]);
-
-                        screen.pbf(&pen, &screen, offset + tx, 1);
-                    }
-                }
-            }
         }
     }
 
