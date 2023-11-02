@@ -137,9 +137,8 @@ def handle_node(filename, json_data, json_node):
         rotation = json_node['rotation']
 
     # xyzw -> wxyz
-    tmp = rotation[0]
-    rotation[0] = rotation[3]
-    rotation[3] = tmp
+    rotation.insert(0, rotation[3])
+    rotation.pop()
 
     if 'scale' in json_node:
         scale = json_node['scale']
