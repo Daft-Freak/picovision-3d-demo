@@ -7,6 +7,7 @@ project(game)
 # Add your sources here (adding headers is optional, but helps some CMake generators)
 set(PROJECT_SOURCE
   game.cpp
+  model.cpp
   render-3d.cpp
 )
 
