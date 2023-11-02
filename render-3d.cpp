@@ -321,6 +321,10 @@ void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point ti
     if(get_outside_sides(p0) & get_outside_sides(p1) & get_outside_sides(p2))
         return;
 
+    // nothing to draw, also would divide by zero later
+    if(p0.y == p1.y && p1.y == p2.y)
+        return;
+
     Pen cols[3]{
         {data[0].r, data[0].g, data[0].b},
         {data[1].r, data[1].g, data[1].b},
