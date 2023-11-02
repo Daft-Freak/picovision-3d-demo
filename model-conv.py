@@ -1,9 +1,9 @@
 import json
-import math
 import numpy as np
 from pathlib import Path
 import struct
 import sys
+from transforms3d import affines, quaternions
 
 component_size = {
     0x1403: 2, # GL_UNSIGNED_SHORT
@@ -67,9 +67,11 @@ def get_accessor_data(filename, json_data, json_accessor, floatify = True):
         return np.array(unpacked_data).reshape((accessor_count, vec_size))
 
 
-def handle_mesh(filename, json_data, json_mesh):
+def handle_mesh(filename, json_data, json_mesh, matrix):
     # this is converting glTF primitives to our "meshes"...
     primitives = []
+
+    t, rot_matrix, z, s = affines.decompose(matrix)
 
     accessors = json_data['accessors']
 
@@ -106,8 +108,11 @@ def handle_mesh(filename, json_data, json_mesh):
         # triangles
         for i in index_data:
             # convert data
-            pos = np.floor(position_data[i] * (1 << 16)).astype(int)
-            nor = np.floor(normal_data[i] * 0x7FFF).astype(int)
+            pos = matrix @ np.append(position_data[i], 1)
+            nor = rot_matrix @ normal_data[i]
+
+            pos = np.floor(pos * (1 << 16)).astype(int)
+            nor = np.floor(nor * 0x7FFF).astype(int)
             col = np.floor(colour_data[i] * 0xFF).astype(int)
 
             packed_vertex = struct.pack('<3i4B3hxx',
@@ -124,12 +129,35 @@ def handle_mesh(filename, json_data, json_mesh):
 def handle_node(filename, json_data, json_node):
     meshes = []
 
+    rotation = [0, 0, 0, 1]
+    scale = [1, 1, 1]
+    translation = [0, 0, 0]
+
+    if 'rotation' in json_node:
+        rotation = json_node['rotation']
+
+    # xyzw -> wxyz
+    tmp = rotation[0]
+    rotation[0] = rotation[3]
+    rotation[3] = tmp
+
+    if 'scale' in json_node:
+        scale = json_node['scale']
+
+    if 'translation' in json_node:
+        translation = json_node['translation']
+
     # TODO
-    if 'matrix' in json_node or 'rotation' in json_node or 'scale' in json_node or 'translation' in json_node:
+    if 'matrix' in json_node:
         print(f'unhandled transform for node {json_node["name"]}')
+        print(json_node)
+
+    mat = affines.compose(translation, quaternions.quat2mat(rotation), scale)
 
     if 'mesh' in json_node:
-        meshes = meshes + handle_mesh(filename, json_data, json_data['meshes'][json_node['mesh']])
+        meshes = meshes + handle_mesh(filename, json_data, json_data['meshes'][json_node['mesh']], mat)
+
+    # TODO: children
 
     return meshes
 
