@@ -19,23 +19,30 @@ void model_lit_shader(const uint8_t *in, Render3D::VertexOutData *out, const Ren
     out->z = tmp.z;
     out->w = tmp.w;
 
-    // col
+    // get normal
+    FixedVec4 nor(Fixed32<>(vertex->nx) / 32767, Fixed32<>(vertex->ny) / 32767, Fixed32<>(vertex->nz) / 32767, Fixed32<>(1.0f));
+    nor = r.get_fixed_model_view() * nor;
+
+    // normalise
+    float len = std::sqrt(float(nor.x * nor.x + nor.y * nor.y + nor.z * nor.z));
+    auto inv_len = Fixed32<>(1.0f / len);
+
+    auto nx = nor.x * inv_len;
+    auto ny = nor.y * inv_len;
+    auto nz = nor.z * inv_len;
+
+    // lighting
     // TODO: store light vec... somewhere
     blit::Vec3 light(-0.577350269f, -0.577350269f, -0.577350269f);
 
-    // TODO: more fixed
-    Vec4 nor(vertex->nx / 32767.0f, vertex->ny / 32767.0f, vertex->nz / 32767.0f, 1.0f);
-    nor = r.get_model_view() * nor;
-    float len = sqrt(nor.x * nor.x + nor.y * nor.y + nor.z * nor.z);
-    nor.x /= len;
-    nor.y /= len;
-    nor.z /= len;
+    auto dot = Fixed32<>(light.x) * nx + Fixed32<>(light.y) * ny + Fixed32<>(light.z) * nz;
 
-    float dot = light.x * nor.x + light.y * nor.y + light.z * nor.z;
+    if(dot.raw() < 0)
+        dot = 0;
 
-    out->r = std::max(dot, 0.0f) * vertex->r;
-    out->g = std::max(dot, 0.0f) * vertex->g;
-    out->b = std::max(dot, 0.0f) * vertex->b;
+    out->r = int32_t(dot * vertex->r);
+    out->g = int32_t(dot * vertex->g);
+    out->b = int32_t(dot * vertex->b);
 }
 
 Model::Model(const uint8_t *asset_data)
