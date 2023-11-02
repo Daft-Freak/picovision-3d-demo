@@ -12,7 +12,7 @@ public:
     {
         uint32_t x, y, z;
         uint8_t r, g, b, a;
-        uint16_t nx, ny, nz;
+        int16_t nx, ny, nz;
         uint16_t pad;
     };
 
