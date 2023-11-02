@@ -1,6 +1,8 @@
 #include <cstdint>
 
+#include "graphics/surface.hpp"
 #include "types/mat4.hpp"
+#include "types/point.hpp"
 
 #include "fixed-mat4.hpp"
 

@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <type_traits>
 
 template<class T, int frac_bits = sizeof(T) * 4>
 class Fixed final
