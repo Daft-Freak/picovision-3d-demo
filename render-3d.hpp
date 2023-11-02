@@ -29,6 +29,7 @@ public:
     void draw(int count, const uint8_t *ptr);
 
     const blit::Mat4 &get_model_view() const;
+    const FixedMat4<> &get_fixed_model_view() const;
     void set_model_view(blit::Mat4 m);
 
     const blit::Mat4 &get_projection() const;
@@ -55,6 +56,7 @@ protected:
     blit::Pen unpack_colour(uint16_t c);
 
     blit::Mat4 model_view, projection;
+    FixedMat4<> fixed_model_view;
     FixedMat4<> mvp;
 
     int vertex_stride = 3;

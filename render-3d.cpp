@@ -98,9 +98,15 @@ const Mat4 &Render3D::get_model_view() const
     return model_view;
 }
 
+const FixedMat4<> &Render3D::get_fixed_model_view() const
+{
+    return fixed_model_view;
+}
+
 void Render3D::set_model_view(Mat4 m)
 {
     model_view = m;
+    fixed_model_view = m;
     //mvp = model_view * projection;
     mvp = projection * model_view;
 }
