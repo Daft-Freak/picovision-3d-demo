@@ -20,7 +20,8 @@ void model_lit_shader(const uint8_t *in, Render3D::VertexOutData *out, const Ren
     out->w = tmp.w;
 
     // get normal
-    FixedVec4 nor(Fixed32<>(vertex->nx) / 32767, Fixed32<>(vertex->ny) / 32767, Fixed32<>(vertex->nz) / 32767, Fixed32<>(1.0f));
+    // should be / 32767, but we're going to normalise anyway
+    FixedVec4 nor(Fixed32<>(vertex->nx) / 32768, Fixed32<>(vertex->ny) / 32768, Fixed32<>(vertex->nz) / 32768, Fixed32<>(1.0f));
     nor = r.get_fixed_model_view() * nor;
 
     // normalise
@@ -35,7 +36,12 @@ void model_lit_shader(const uint8_t *in, Render3D::VertexOutData *out, const Ren
     // TODO: store light vec... somewhere
     blit::Vec3 light(-0.577350269f, -0.577350269f, -0.577350269f);
 
-    auto dot = Fixed32<>(light.x) * nx + Fixed32<>(light.y) * ny + Fixed32<>(light.z) * nz;
+    // everything here is in -1 - 1
+    // trade a bit of precision for avoiding the 64-bit muls
+    // kinda ugly with all the too/from raw...
+    auto dot = Fixed32<15>::from_raw(Fixed32<15>(light.x).raw() * Fixed32<15>(nx).raw() >> 15)
+             + Fixed32<15>::from_raw(Fixed32<15>(light.y).raw() * Fixed32<15>(ny).raw() >> 15)
+             + Fixed32<15>::from_raw(Fixed32<15>(light.z).raw() * Fixed32<15>(nz).raw() >> 15);
 
     if(dot.raw() < 0)
         dot = 0;
