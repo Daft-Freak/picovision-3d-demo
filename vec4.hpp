@@ -12,7 +12,7 @@ public:
     float x, y, z, w;
 };
 
-Vec4 operator*(const blit::Mat4 &mat, const Vec4 &vec)
+inline Vec4 operator*(const blit::Mat4 &mat, const Vec4 &vec)
 {
     Vec4 out;
     out.x = (vec.x * mat.v00) + (vec.y * mat.v01) + (vec.z * mat.v02) + (vec.w * mat.v03);
@@ -37,7 +37,7 @@ public:
 };
 
 template <class T, int frac_bits>
-FixedVec4<T, frac_bits> operator*(const FixedMat4<T, frac_bits> &mat, const FixedVec4<T, frac_bits> &vec)
+inline FixedVec4<T, frac_bits> operator*(const FixedMat4<T, frac_bits> &mat, const FixedVec4<T, frac_bits> &vec)
 {
     FixedVec4<T, frac_bits> out;
     out.x = (vec.x * mat.v00) + (vec.y * mat.v01) + (vec.z * mat.v02) + (vec.w * mat.v03);
