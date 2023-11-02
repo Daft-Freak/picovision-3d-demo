@@ -71,7 +71,7 @@ void init()
     auto near = 0.1, far = 10.0;
     auto tanFov = tan(0.785398163);
     auto nearH = near * tanFov;
-    auto nearW = nearH * (4.0 / 3.0);
+    auto nearW = nearH * (double(screen.bounds.w) / screen.bounds.h);
     r3d.set_projection(frustum(-nearW, nearW, -nearH, nearH, near, far));
 }
 
