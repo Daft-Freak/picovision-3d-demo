@@ -40,6 +40,8 @@ public:
 
     void set_vertex_shader(VertexShaderFunc shader);
 
+    int get_transformed_vertex_count() const;
+
     void rasterise();
 
 protected:

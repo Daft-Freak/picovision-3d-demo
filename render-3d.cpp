@@ -121,6 +121,14 @@ void Render3D::set_vertex_shader(VertexShaderFunc shader)
     vertex_shader = shader;
 }
 
+int Render3D::get_transformed_vertex_count() const
+{
+    if(!transformed_vertex_ptr)
+        return 0;
+
+    return transformed_vertex_ptr - transformed_vertices;
+}
+
 void Render3D::rasterise()
 {
     if(!transformed_vertex_ptr)
