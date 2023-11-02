@@ -266,16 +266,17 @@ void Render3D::rasterise()
 void Render3D::transform_vertex(VertexOutData &pos)
 {
     // perspective
-    pos.x /= pos.w;
-    pos.y /= pos.w;
-    pos.z /= pos.w;
+    pos.w = Fixed32<>(1) / pos.w;
+    pos.x *= pos.w;
+    pos.y *= pos.w;
+    pos.z *= pos.w;
 
     Rect viewport{0, 0, screen.bounds.w, screen.bounds.h};
 
     // viewport
-    pos.x = Fixed32<>(viewport.x) + (pos.x * Fixed32<>(0.5f) + 0.5f) * viewport.w;
-    pos.y = Fixed32<>(viewport.y) + (pos.y * Fixed32<>(0.5f) + 0.5f) * viewport.h;
-    pos.z = (pos.z + 1.0f) * Fixed32<>(32767.5f);
+    pos.x = Fixed32<>(viewport.x) + (pos.x + 1) * (viewport.w / 2);
+    pos.y = Fixed32<>(viewport.y) + (pos.y + 1) * (viewport.h / 2);
+    pos.z = (pos.z + 1) * Fixed32<>(32767.5f);
 }
 
 void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point tile_pos)
