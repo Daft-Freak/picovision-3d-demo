@@ -126,7 +126,7 @@ def handle_mesh(filename, json_data, json_mesh, matrix):
 
     return primitives
 
-def handle_node(filename, json_data, json_node):
+def handle_node(filename, json_data, json_node, parent_mat = None):
     meshes = []
 
     rotation = [0, 0, 0, 1]
@@ -153,10 +153,16 @@ def handle_node(filename, json_data, json_node):
 
     mat = affines.compose(translation, quaternions.quat2mat(rotation), scale)
 
+    if parent_mat is not None:
+        mat = parent_mat @ mat
+
     if 'mesh' in json_node:
         meshes = meshes + handle_mesh(filename, json_data, json_data['meshes'][json_node['mesh']], mat)
 
-    # TODO: children
+    # children
+    if 'children' in json_node:
+        for node_id in json_node['children']:
+            meshes = meshes + handle_node(filename, json_data, json_data['nodes'][node_id], mat)
 
     return meshes
 
