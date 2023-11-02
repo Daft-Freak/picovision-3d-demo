@@ -231,10 +231,15 @@ void Render3D::rasterise()
                 mutex_exit(&blit_mutex);
 #endif
             }
+            else if(screen.format == PixelFormat::RGB565)
+            {
+                // matching format copy
+                for(int ty = 0; ty < tile_height; ty++)
+                    memcpy(screen.ptr(x, y + ty), col_buf + ty * tile_width, tile_width * 2);
+            }
             else
             {
                 // fallback
-                // TODO: optimise based on screen format
                 for(int ty = 0; ty < tile_height; ty++)
                 {
                     auto offset = screen.offset(x, y + ty);
