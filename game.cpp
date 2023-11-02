@@ -59,9 +59,10 @@ Mat4 frustum(float left, float right, float bottom, float top, float nearVal, fl
 // "shaders"
 // in is xyz
 // out is xyzw rgb
-void noColShader(const float *in, Render3D::VertexOutData *out, const Render3D &r)
+void noColShader(const uint8_t *in, Render3D::VertexOutData *out, const Render3D &r)
 {
-    FixedVec4 tmp(in[0], in[1], in[2], 1.0f);
+    auto fin = reinterpret_cast<const float *>(in);
+    FixedVec4 tmp(fin[0], fin[1], fin[2], 1.0f);
     
     // transform
     tmp = r.get_model_view_projection() * tmp;
@@ -80,9 +81,10 @@ void noColShader(const float *in, Render3D::VertexOutData *out, const Render3D &
 
 // in is xyz rgb
 // out is xyzw rgb
-void colPassthroughShader(const float *in, Render3D::VertexOutData *out, const Render3D &r)
+void colPassthroughShader(const uint8_t *in, Render3D::VertexOutData *out, const Render3D &r)
 {
-    FixedVec4 tmp(in[0], in[1], in[2], 1.0f);
+    auto fin = reinterpret_cast<const float *>(in);
+    FixedVec4 tmp(fin[0], fin[1], fin[2], 1.0f);
     
     // transform
     tmp = r.get_model_view_projection() * tmp;
@@ -94,16 +96,17 @@ void colPassthroughShader(const float *in, Render3D::VertexOutData *out, const R
     out->w = tmp.w;
 
     // col
-    out->r = in[3] * 255.0f;
-    out->g = in[4] * 255.0f;
-    out->b = in[5] * 255.0f;
+    out->r = fin[3] * 255.0f;
+    out->g = fin[4] * 255.0f;
+    out->b = fin[5] * 255.0f;
 }
 
 // in is xyz nx ny nx
 // out is xyzw rgb
-void litShader(const float *in, Render3D::VertexOutData *out, const Render3D &r)
+void litShader(const uint8_t *in, Render3D::VertexOutData *out, const Render3D &r)
 {
-    FixedVec4 tmp(in[0], in[1], in[2], 1.0f);
+    auto fin = reinterpret_cast<const float *>(in);
+    FixedVec4 tmp(fin[0], fin[1], fin[2], 1.0f);
     
     // transform
     tmp = r.get_model_view_projection() * tmp;
@@ -117,7 +120,7 @@ void litShader(const float *in, Render3D::VertexOutData *out, const Render3D &r)
     // col
     Vec3 light(-0.577350269f, -0.577350269f, -0.577350269f);
 
-    Vec4 nor(in[3], in[4], in[5], 1.0f);
+    Vec4 nor(fin[3], fin[4], fin[5], 1.0f);
     nor = r.get_model_view() * nor;
     float len = sqrt(nor.x * nor.x + nor.y * nor.y + nor.z * nor.z);
     nor.x /= len;
@@ -211,12 +214,12 @@ void render(uint32_t time)
     r3d.set_model_view(m);*/
     r3d.set_model_view(Mat4::translation(Vec3(0.0f, 0.0f, -4.0f)) * Mat4::rotation(ang, Vec3{0.0f, 1.0f, 0.0f}) * Mat4::rotation(ang2, Vec3{1.0f, 0.0f, 0.0f}));
 
-    r3d.set_vertex_stride(6);
+    r3d.set_vertex_stride(6 * sizeof(float));
 
     auto vert_start = now_us();
 
     r3d.set_vertex_shader(litShader);
-    r3d.draw(6 * 6, vertices_with_normals);
+    r3d.draw(6 * 6, reinterpret_cast<const uint8_t *>(vertices_with_normals));
     auto vert_end = now_us();
 
     auto frag_start = now_us();

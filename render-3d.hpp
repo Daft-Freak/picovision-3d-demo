@@ -21,11 +21,11 @@ public:
         uint8_t r, g, b, a;
     };
 
-    using VertexShaderFunc = void(*)(const float *, VertexOutData *, const Render3D &);
+    using VertexShaderFunc = void(*)(const uint8_t *, VertexOutData *, const Render3D &);
 
     Render3D();
 
-    void draw(int count, const float *ptr);
+    void draw(int count, const uint8_t *ptr);
 
     const blit::Mat4 &get_model_view() const;
     void set_model_view(blit::Mat4 m);

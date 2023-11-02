@@ -57,7 +57,7 @@ static void core1_entry()
 Render3D::Render3D() : tile_surf(reinterpret_cast<uint8_t *>(tile_colour_buffer), PixelFormat::BGR555, {tile_width, tile_height})
 {}
 
-void Render3D::draw(int count, const float *ptr)
+void Render3D::draw(int count, const uint8_t *ptr)
 {
     if(!transformed_vertex_ptr)
         transformed_vertex_ptr = transformed_vertices;
