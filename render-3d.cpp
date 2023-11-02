@@ -77,6 +77,17 @@ void Render3D::draw(int count, const uint8_t *ptr)
             transform_vertex(trans[j]);
         }
 
+        // back-face culling
+        auto ab_x = int32_t(trans[1].x) - int32_t(trans[0].x);
+        auto ab_y = int32_t(trans[1].y) - int32_t(trans[0].y);
+        auto ac_x = int32_t(trans[2].x) - int32_t(trans[0].x);
+        auto ac_y = int32_t(trans[2].y) - int32_t(trans[0].y);
+
+        int32_t z = ab_x * ac_y - ab_y * ac_x;
+
+        if(z < 0)
+            continue;
+
         // TODO: clipping
         transformed_vertex_ptr += 3;
     }
@@ -296,15 +307,6 @@ void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point ti
 
     // all points outside on the same side
     if(get_outside_sides(p0) & get_outside_sides(p1) & get_outside_sides(p2))
-        return;
-
-    // back-face culling
-    auto ab = p1 - p0;
-    auto ac = p2 - p0;
-
-    int32_t z = ab.x * ac.y - ab.y * ac.x;
-
-    if(z < 0)
         return;
 
     Pen cols[3]{
