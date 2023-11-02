@@ -111,6 +111,9 @@ def handle_mesh(filename, json_data, json_mesh, matrix):
             pos = matrix @ np.append(position_data[i], 1)
             nor = rot_matrix @ normal_data[i]
 
+            pos[1] *= -1 # flip y
+            nor[1] *= -1
+
             pos = np.floor(pos * (1 << 16)).astype(int)
             nor = np.floor(nor * 0x7FFF).astype(int)
             col = np.floor(colour_data[i] * 0xFF).astype(int)
@@ -121,6 +124,12 @@ def handle_mesh(filename, json_data, json_mesh, matrix):
                                         nor[0], nor[1], nor[2])
             
             out_vertices.append(packed_vertex)
+
+        # flip winding
+        for i in range(0, len(out_vertices), 3):
+            tmp = out_vertices[i]
+            out_vertices[i] = out_vertices[i + 1]
+            out_vertices[i + 1] = tmp
 
         primitives.append(out_vertices)
 
