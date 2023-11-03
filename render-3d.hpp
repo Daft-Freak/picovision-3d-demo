@@ -2,7 +2,6 @@
 #include <cstdint>
 
 #include "graphics/surface.hpp"
-#include "types/mat4.hpp"
 #include "types/point.hpp"
 
 #include "fixed-mat4.hpp"
@@ -28,12 +27,11 @@ public:
 
     void draw(int count, const uint8_t *ptr);
 
-    const blit::Mat4 &get_model_view() const;
-    const FixedMat4<> &get_fixed_model_view() const;
-    void set_model_view(blit::Mat4 m);
+    const FixedMat4<> &get_model_view() const;
+    void set_model_view(FixedMat4<> m);
 
-    const blit::Mat4 &get_projection() const;
-    void set_projection(blit::Mat4 m);
+    const FixedMat4<> &get_projection() const;
+    void set_projection(FixedMat4<> m);
 
     const FixedMat4<> &get_model_view_projection() const;
 
@@ -55,8 +53,7 @@ protected:
     uint16_t pack_colour(blit::Pen p);
     blit::Pen unpack_colour(uint16_t c);
 
-    blit::Mat4 model_view, projection;
-    FixedMat4<> fixed_model_view;
+    FixedMat4<> model_view, projection;
     FixedMat4<> mvp;
 
     int vertex_stride = 3;
