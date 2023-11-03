@@ -1,3 +1,4 @@
+#include <cinttypes>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -83,6 +84,8 @@ void update(uint32_t time)
 
 void render(uint32_t time)
 {
+    auto render_start = now_us();
+
     auto translation = FixedMat4<>::translation(Vec3(0.0f, 0.0f, -4.0f));
     auto scale = FixedMat4<>::scale({1.0f, 1.0f, 1.0f});
     auto rot_y = FixedMat4<>::rotation(ang, Vec3{0.0f, 1.0f, 0.0f});
@@ -94,11 +97,21 @@ void render(uint32_t time)
     model.draw(r3d);
     auto vert_end = now_us();
 
+    auto vertex_count = r3d.get_transformed_vertex_count();
+
     auto frag_start = now_us();
     r3d.rasterise();
     auto frag_end = now_us();
 
+    // debug stats
     screen.pen = {255, 0, 0};
-    screen.text(std::to_string(us_diff(vert_start, vert_end)), minimal_font, {0, 0});
-    screen.text(std::to_string(us_diff(frag_start, frag_end)), minimal_font, {0, 10});
+    char buf[100];
+    snprintf(buf, sizeof(buf), "V %6" PRIi32 "us\nF %6" PRIi32 "us\nR %6" PRIi32 "us\nT %6i",
+        us_diff(vert_start, vert_end),
+        us_diff(frag_start, frag_end),
+        us_diff(render_start, frag_end),
+        vertex_count
+    );
+
+    screen.text(buf, minimal_font, {0, 0}, false);
 }
