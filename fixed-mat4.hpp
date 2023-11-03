@@ -2,7 +2,9 @@
 
 #include "fixed.hpp"
 
+#include "math/constants.hpp"
 #include "types/mat4.hpp"
+#include "types/vec3.hpp"
 
 template <class T = int32_t, int frac_bits = sizeof(T) * 4>
 struct FixedMat4
@@ -53,6 +55,57 @@ struct FixedMat4
         v30 = r30; v31 = r31; v32 = r32; v33 = r33;
 
         return *this;
+    }
+
+    static FixedMat4 identity()
+    {
+        FixedMat4 m;
+        m.v00 = 1.0f; m.v11 = 1.0f; m.v22 = 1.0f; m.v33 = 1.0f;
+        return m;
+    }
+
+    static FixedMat4 rotation(float a, blit::Vec3 v)
+    {
+        v.normalize();
+
+        a *= (blit::pi / 180.0f);
+
+        Fixed32<> c = cosf(a);
+        Fixed32<> s = sinf(a);
+        auto t = Fixed32<>(1.0f) - c;
+
+        Fixed32<> x = v.x;
+        Fixed32<> y = v.y;
+        Fixed32<> z = v.z;
+
+        auto r = FixedMat4::identity();
+
+        r.v00 = x * x * t + c;
+        r.v01 = x * y * t - z * s;
+        r.v02 = x * z * t + y * s;
+        r.v10 = y * x * t + z * s;
+        r.v11 = y * y * t + c;
+        r.v12 = y * z * t - x * s;
+        r.v20 = z * x * t - y * s;
+        r.v21 = z * y * t + x * s;
+        r.v22 = z * z * t + c;
+
+        return r;
+    }
+
+    static FixedMat4 translation(blit::Vec3 v)
+    {
+        auto r = FixedMat4::identity();
+        r.v03 = v.x; r.v13 = v.y; r.v23 = v.z;
+        return r;
+    }
+
+    static FixedMat4 scale(blit::Vec3 v)
+    {
+        FixedMat4 r;
+        r.v00 = v.x; r.v11 = v.y; r.v22 = v.z;
+        r.v33 = 1.0f;
+        return r;
     }
 };
 
