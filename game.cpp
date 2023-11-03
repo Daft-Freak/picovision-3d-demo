@@ -82,12 +82,11 @@ void update(uint32_t time)
 
 void render(uint32_t time)
 {
-    /*Mat4 m;
-    m.identity();
-    m.rotate(ang, Vec3{0.0f, 1.0f, 0.0f});
-    m.translate({0.0f, 0.0f, -4.0f});
-    r3d.set_model_view(m);*/
-    r3d.set_model_view(Mat4::translation(Vec3(0.0f, 0.0f, -4.0f)) * Mat4::rotation(ang, Vec3{0.0f, 1.0f, 0.0f}) * Mat4::rotation(ang2, Vec3{1.0f, 0.0f, 0.0f}));
+    auto translation = Mat4::translation(Vec3(0.0f, 0.0f, -4.0f));
+    auto scale = Mat4::scale({1.0f, 1.0f, 1.0f});
+    auto rot_y = Mat4::rotation(ang, Vec3{0.0f, 1.0f, 0.0f});
+    auto rot_x = Mat4::rotation(ang2, Vec3{1.0f, 0.0f, 0.0f});
+    r3d.set_model_view(translation * scale * rot_y * rot_x);
 
     auto vert_start = now_us();
     r3d.set_vertex_shader(model_lit_shader);
