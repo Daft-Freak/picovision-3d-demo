@@ -59,16 +59,12 @@ void fixed32_mvp_pos_shader(const uint8_t *in, Render3D::VertexOutData *out, con
 {
     auto pos = reinterpret_cast<const Fixed32<> *>(in);
 
-    FixedVec4 tmp(pos[0], pos[1], pos[2], Fixed32<>(1.0f));
-    
-    // transform
-    tmp = r.get_model_view_projection() * tmp;
+    auto &mat = r.get_model_view_projection();
 
-    // pos
-    out->x = tmp.x;
-    out->y = tmp.y;
-    out->z = tmp.z;
-    out->w = tmp.w;
+    out->x = (pos[0] * mat.v00) + (pos[1] * mat.v01) + (pos[2] * mat.v02) + mat.v03;
+    out->y = (pos[0] * mat.v10) + (pos[1] * mat.v11) + (pos[2] * mat.v12) + mat.v13;
+    out->z = (pos[0] * mat.v20) + (pos[1] * mat.v21) + (pos[2] * mat.v22) + mat.v23;
+    out->w = (pos[0] * mat.v30) + (pos[1] * mat.v31) + (pos[2] * mat.v32) + mat.v33;
 }
 
 Render3D::Render3D() : tile_surf(reinterpret_cast<uint8_t *>(tile_colour_buffer), PixelFormat::BGR555, {tile_width, tile_height})
