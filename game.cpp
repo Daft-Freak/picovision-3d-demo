@@ -93,6 +93,7 @@ void render(uint32_t time)
     r3d.set_model_view(translation * scale * rot_y * rot_x);
 
     auto vert_start = now_us();
+    r3d.set_position_shader(fixed32_mvp_pos_shader);
     r3d.set_vertex_shader(model_lit_shader);
     model.draw(r3d);
     auto vert_end = now_us();

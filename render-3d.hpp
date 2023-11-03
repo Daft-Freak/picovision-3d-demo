@@ -37,6 +37,7 @@ public:
 
     void set_vertex_stride(int stride);
 
+    void set_position_shader(VertexShaderFunc shader);
     void set_vertex_shader(VertexShaderFunc shader);
 
     int get_transformed_vertex_count() const;
@@ -57,7 +58,7 @@ protected:
     FixedMat4<> mvp;
 
     int vertex_stride = 3;
-    VertexShaderFunc vertex_shader = nullptr;
+    VertexShaderFunc position_shader = nullptr, vertex_shader = nullptr;
 
     VertexOutData transformed_vertices[1024];
     VertexOutData *transformed_vertex_ptr = nullptr;
@@ -74,3 +75,6 @@ protected:
     // used for picovision blit
     blit::Surface tile_surf;
 };
+
+// 16.16 fixed point positions, multiply by mvp
+void fixed32_mvp_pos_shader(const uint8_t *in, Render3D::VertexOutData *out, const Render3D &r);

@@ -7,18 +7,6 @@
 void model_lit_shader(const uint8_t *in, Render3D::VertexOutData *out, const Render3D &r)
 {
     auto vertex = reinterpret_cast<const Model::Vertex *>(in);
-
-    FixedVec4 tmp(Fixed32<>::from_raw(vertex->x), Fixed32<>::from_raw(vertex->y), Fixed32<>::from_raw(vertex->z), Fixed32<>(1.0f));
-    
-    // transform
-    tmp = r.get_model_view_projection() * tmp;
-
-    // pos
-    out->x = tmp.x;
-    out->y = tmp.y;
-    out->z = tmp.z;
-    out->w = tmp.w;
-
     // get normal
     // should be / 32767, but we're going to normalise anyway
     FixedVec4 nor(Fixed32<>(vertex->nx) / 32768, Fixed32<>(vertex->ny) / 32768, Fixed32<>(vertex->nz) / 32768, Fixed32<>(0.0f));

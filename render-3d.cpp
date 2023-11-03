@@ -11,6 +11,7 @@
 #include "types/vec3.hpp"
 
 #include "render-3d.hpp"
+#include "vec4.hpp"
 
 using namespace blit;
 
@@ -54,6 +55,22 @@ static void core1_entry()
 }
 #endif
 
+void fixed32_mvp_pos_shader(const uint8_t *in, Render3D::VertexOutData *out, const Render3D &r)
+{
+    auto pos = reinterpret_cast<const Fixed32<> *>(in);
+
+    FixedVec4 tmp(pos[0], pos[1], pos[2], Fixed32<>(1.0f));
+    
+    // transform
+    tmp = r.get_model_view_projection() * tmp;
+
+    // pos
+    out->x = tmp.x;
+    out->y = tmp.y;
+    out->z = tmp.z;
+    out->w = tmp.w;
+}
+
 Render3D::Render3D() : tile_surf(reinterpret_cast<uint8_t *>(tile_colour_buffer), PixelFormat::BGR555, {tile_width, tile_height})
 {}
 
@@ -71,9 +88,10 @@ void Render3D::draw(int count, const uint8_t *ptr)
 
         auto trans = transformed_vertex_ptr;
 
+        // calculate final positions
         for(int j = 0; j < 3; j++)
         {
-            vertex_shader(ptr + (i + j) * vertex_stride, trans + j, *this);
+            position_shader(ptr + (i + j) * vertex_stride, trans + j, *this);
             transform_vertex(trans[j]);
         }
 
@@ -87,6 +105,10 @@ void Render3D::draw(int count, const uint8_t *ptr)
 
         if(z < 0)
             continue;
+
+        // calculate the rest of the attributes
+        for(int j = 0; j < 3; j++)
+            vertex_shader(ptr + (i + j) * vertex_stride, trans + j, *this);
 
         // TODO: clipping
         transformed_vertex_ptr += 3;
@@ -125,6 +147,11 @@ const FixedMat4<> &Render3D::get_model_view_projection() const
 void Render3D::set_vertex_stride(int stride)
 {
     vertex_stride = stride;
+}
+
+void Render3D::set_position_shader(VertexShaderFunc shader)
+{
+    position_shader = shader;
 }
 
 void Render3D::set_vertex_shader(VertexShaderFunc shader)
