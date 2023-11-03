@@ -77,7 +77,8 @@ void init()
 
 void update(uint32_t time)
 {
-
+    ang += 0.25f;
+    ang2 -= 0.15f;
 }
 
 void render(uint32_t time)
@@ -96,9 +97,6 @@ void render(uint32_t time)
     auto frag_start = now_us();
     r3d.rasterise();
     auto frag_end = now_us();
-
-    ang += 0.5f;
-    ang2 -= 0.3f;
 
     screen.pen = {255, 0, 0};
     screen.text(std::to_string(us_diff(vert_start, vert_end)), minimal_font, {0, 0});
