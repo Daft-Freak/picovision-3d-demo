@@ -97,6 +97,10 @@ void Render3D::draw(int count, const uint8_t *ptr)
         auto ac_x = int32_t(trans[2].x) - int32_t(trans[0].x);
         auto ac_y = int32_t(trans[2].y) - int32_t(trans[0].y);
 
+        // nothing to draw
+        if((ab_x == 0 && ab_y == 0) || (ac_x == 0 && ac_y == 0))
+            continue;
+
         int32_t z = ab_x * ac_y - ab_y * ac_x;
 
         if(z < 0)
