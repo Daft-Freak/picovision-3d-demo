@@ -22,7 +22,7 @@ void model_lit_shader(const uint8_t *in, Render3D::VertexOutData *out, const Ren
     // get normal
     // should be / 32767, but we're going to normalise anyway
     FixedVec4 nor(Fixed32<>(vertex->nx) / 32768, Fixed32<>(vertex->ny) / 32768, Fixed32<>(vertex->nz) / 32768, Fixed32<>(0.0f));
-    nor = r.get_fixed_model_view() * nor;
+    nor = r.get_model_view() * nor;
 
     // normalise
     float len = std::sqrt(float(nor.x * nor.x + nor.y * nor.y + nor.z * nor.z));
