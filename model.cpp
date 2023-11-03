@@ -46,6 +46,12 @@ void model_lit_shader(const uint8_t *in, Render3D::VertexOutData *out, const Ren
     if(dot.raw() < 0)
         dot = 0;
 
+    // ambient
+    dot += Fixed32<15>(0.3f);
+
+    if(dot.raw() > 1 << 15)
+        dot = Fixed32<15>(1);
+
     out->r = int32_t(dot * vertex->r);
     out->g = int32_t(dot * vertex->g);
     out->b = int32_t(dot * vertex->b);
