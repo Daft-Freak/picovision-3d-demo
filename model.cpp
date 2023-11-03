@@ -21,7 +21,7 @@ void model_lit_shader(const uint8_t *in, Render3D::VertexOutData *out, const Ren
 
     // get normal
     // should be / 32767, but we're going to normalise anyway
-    FixedVec4 nor(Fixed32<>(vertex->nx) / 32768, Fixed32<>(vertex->ny) / 32768, Fixed32<>(vertex->nz) / 32768, Fixed32<>(1.0f));
+    FixedVec4 nor(Fixed32<>(vertex->nx) / 32768, Fixed32<>(vertex->ny) / 32768, Fixed32<>(vertex->nz) / 32768, Fixed32<>(0.0f));
     nor = r.get_fixed_model_view() * nor;
 
     // normalise
@@ -34,7 +34,7 @@ void model_lit_shader(const uint8_t *in, Render3D::VertexOutData *out, const Ren
 
     // lighting
     // TODO: store light vec... somewhere
-    blit::Vec3 light(-0.577350269f, -0.577350269f, -0.577350269f);
+    blit::Vec3 light(-0.577350269f, -0.577350269f, 0.577350269f);
 
     // everything here is in -1 - 1
     // trade a bit of precision for avoiding the 64-bit muls
