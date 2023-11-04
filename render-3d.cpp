@@ -278,7 +278,7 @@ void Render3D::rasterise()
 void Render3D::transform_vertex(VertexOutData &pos)
 {
     // perspective
-    pos.w = Fixed32<>(1) / pos.w;
+    pos.w = pos.w.reciprocal();
     pos.x *= pos.w;
     pos.y *= pos.w;
     pos.z *= pos.w;
