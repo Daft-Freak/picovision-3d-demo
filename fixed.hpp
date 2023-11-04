@@ -113,6 +113,23 @@ public:
         return res;
     }
 
+    constexpr SameFixed reciprocal() const
+    {
+        SameFixed ret;
+        if constexpr(frac_bits >= sizeof(T) * 4)
+        {
+            // less precise, but faster
+            // worse the more fractional bits you have
+            constexpr int target_frac_bits = sizeof(T) * 4 - 1;
+            constexpr int shift = frac_bits - target_frac_bits;
+            ret.val = ((1 << (target_frac_bits * 2)) / (val >> shift)) << shift;
+        }
+        else // no less precise, still faster
+            ret.val = (1 << (frac_bits * 2)) / val;
+
+        return ret;
+    }
+
     inline T raw() const {return val;}
 
     static SameFixed from_raw(T val)
