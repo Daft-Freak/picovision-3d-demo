@@ -5,8 +5,6 @@ template<class T, int frac_bits = sizeof(T) * 4>
 class Fixed final
 {
 public:
-    using SameFixed = Fixed<T, frac_bits>;
-
     constexpr Fixed() = default;
 
     // conversions to fixed
@@ -31,10 +29,10 @@ public:
     constexpr explicit operator float() {return static_cast<float>(val) / (1 << frac_bits);}
 
     // basic operators
-    constexpr SameFixed &operator +=(SameFixed f) {this->val += f.val; return *this;}
-    constexpr SameFixed &operator -=(SameFixed f) {this->val -= f.val; return *this;}
+    constexpr Fixed &operator +=(Fixed f) {this->val += f.val; return *this;}
+    constexpr Fixed &operator -=(Fixed f) {this->val -= f.val; return *this;}
 
-    constexpr SameFixed operator -()
+    constexpr Fixed operator -()
     {
         auto res = *this;
         res.val = -res.val;
@@ -42,7 +40,7 @@ public:
     }
 
     // multiply
-    constexpr SameFixed &operator *=(SameFixed f)
+    constexpr Fixed &operator *=(Fixed f)
     {
         // cast to larger type then shift back down
         if constexpr(sizeof(T) >= 4)
@@ -52,10 +50,10 @@ public:
         return *this;
     }
 
-    constexpr SameFixed &operator *=(int i){this->val *= i; return *this;}
+    constexpr Fixed &operator *=(int i){this->val *= i; return *this;}
 
     // divide
-    constexpr SameFixed &operator /=(SameFixed f)
+    constexpr Fixed &operator /=(Fixed f)
     {
         // cast to larger type and shift up
         if constexpr(sizeof(T) >= 4)
@@ -67,55 +65,55 @@ public:
 
     // TODO: shortcut if only int result wanted
 
-    constexpr SameFixed &operator /=(int i){this->val /= i; return *this;}
+    constexpr Fixed &operator /=(int i){this->val /= i; return *this;}
 
 
     // more operators/wrappers
-    constexpr SameFixed operator +(SameFixed f) const
+    constexpr Fixed operator +(Fixed f) const
     {
         auto res = *this;
         res += f;
         return res;
     }
 
-    constexpr SameFixed operator -(SameFixed f) const
+    constexpr Fixed operator -(Fixed f) const
     {
         auto res = *this;
         res -= f;
         return res;
     }
 
-    constexpr SameFixed operator *(SameFixed f) const
+    constexpr Fixed operator *(Fixed f) const
     {
         auto res = *this;
         res *= f;
         return res;
     }
 
-    constexpr SameFixed operator *(int i) const
+    constexpr Fixed operator *(int i) const
     {
         auto res = *this;
         res *= i;
         return res;
     }
 
-    constexpr SameFixed operator /(SameFixed f) const
+    constexpr Fixed operator /(Fixed f) const
     {
         auto res = *this;
         res /= f;
         return res;
     }
 
-    constexpr SameFixed operator /(int i) const
+    constexpr Fixed operator /(int i) const
     {
         auto res = *this;
         res /= i;
         return res;
     }
 
-    constexpr SameFixed reciprocal() const
+    constexpr Fixed reciprocal() const
     {
-        SameFixed ret;
+        Fixed ret;
         if constexpr(frac_bits >= sizeof(T) * 4)
         {
             // less precise, but faster
@@ -132,9 +130,9 @@ public:
 
     inline T raw() const {return val;}
 
-    static SameFixed from_raw(T val)
+    static Fixed from_raw(T val)
     {
-        SameFixed ret;
+        Fixed ret;
         ret.val = val;
 
         return ret;
