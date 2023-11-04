@@ -11,8 +11,9 @@ public:
     struct Vertex
     {
         uint32_t x, y, z;
-        uint8_t r, g, b, a;
+        uint8_t r, g, b, tex_index;
         int16_t nx, ny, nz;
+        uint16_t u, v;
         uint16_t pad;
     };
 

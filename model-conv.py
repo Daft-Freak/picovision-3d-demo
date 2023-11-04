@@ -90,6 +90,10 @@ def handle_mesh(filename, json_data, json_mesh, matrix):
         if 'COLOR_0' in prim_attribs:
             colour_accessor = accessors[prim_attribs['COLOR_0']]
 
+        tex_coord_accessor = None
+        if 'TEXCOORD_0' in prim_attribs:
+            tex_coord_accessor = accessors[prim_attribs['TEXCOORD_0']]
+
         # TODO: may not exist, non-indexed data
         index_accessor = accessors[primitive['indices']]
 
@@ -103,25 +107,53 @@ def handle_mesh(filename, json_data, json_mesh, matrix):
         else:
             colour_data = np.full((len(position_data), 4), [1, 1, 1, 1])
 
+        # get tex coords or all zeros
+        if tex_coord_accessor:
+            tex_coord_data = get_accessor_data(filename, json_data, tex_coord_accessor)
+        else:
+            tex_coord_data = np.full((len(position_data), 2), [0, 0])
+
         index_data = get_accessor_data(filename, json_data, index_accessor, False)
+
+        # check if material is textures
+        material_id = primitive['material']
+        material = json_data['materials'][material_id]
+
+        # TODO: other material types?
+        tex_id = 0 # no tex
+        if 'pbrMetallicRoughness' in material and 'baseColorTexture' in material['pbrMetallicRoughness']:
+            tex_id = material['pbrMetallicRoughness']['baseColorTexture']['index'] + 1
 
         # triangles
         for i in index_data:
-            # convert data
+            # transform pos/normal
             pos = matrix @ np.append(position_data[i], 1)
             nor = rot_matrix @ normal_data[i]
 
             pos[1] *= -1 # flip y
             nor[1] *= -1
 
+            tex_coord = tex_coord_data[i]
+
+            # make tex coords positive
+            if tex_coord[0] < 0.0:
+                tex_coord[0] = 1.0 - (tex_coord[0] % 1)
+            if tex_coord[1] < 0.0:
+                tex_coord[1] = 1.0 - (tex_coord[1] % 1)
+
+            # TODO: wrap >1?
+
+            # convert data
             pos = np.floor(pos * (1 << 16)).astype(int)
             nor = np.floor(nor * 0x7FFF).astype(int)
             col = np.floor(colour_data[i] * 0xFF).astype(int)
+            tex_coord = np.floor(tex_coord * 0xFFFF).astype(int)
 
-            packed_vertex = struct.pack('<3i4B3hxx',
+            packed_vertex = struct.pack('<3i4B3h2Hxx',
                                         pos[0], pos[1], pos[2], 
-                                        col[0], col[1], col[2], col[3],
-                                        nor[0], nor[1], nor[2])
+                                        col[0], col[1], col[2], tex_id,
+                                        nor[0], nor[1], nor[2],
+                                        tex_coord[0], tex_coord[1])
             
             out_vertices.append(packed_vertex)
 

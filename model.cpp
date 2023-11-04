@@ -44,7 +44,14 @@ void model_lit_shader(const uint8_t *in, Render3D::VertexOutData *out, const Ren
     out->g = int32_t(dot * vertex->g);
     out->b = int32_t(dot * vertex->b);
 
-    out->tex_index = 0;
+    out->tex_index = vertex->tex_index;
+
+    if(vertex->tex_index)
+    {
+        // close enough (should be / 65535)
+        out->u = Fixed16<12>(Fixed32<>::from_raw(vertex->u));
+        out->v = Fixed16<12>(Fixed32<>::from_raw(vertex->v));
+    }
 }
 
 Model::Model(const uint8_t *asset_data)
