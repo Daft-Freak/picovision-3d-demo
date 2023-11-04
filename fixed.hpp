@@ -40,13 +40,14 @@ public:
     }
 
     // multiply
-    constexpr Fixed &operator *=(Fixed f)
+    template<class T2, int frac_bits2>
+    constexpr Fixed &operator *=(Fixed<T2, frac_bits2> f)
     {
         // cast to larger type then shift back down
-        if constexpr(sizeof(T) >= 4)
-            this->val = (static_cast<int64_t>(this->val) * f.val) >> frac_bits;
+        if constexpr(sizeof(T) >= 4 || sizeof(T2) >= 4)
+            this->val = (static_cast<int64_t>(this->val) * f.raw()) >> frac_bits2;
         else
-            this->val = (static_cast<int32_t>(this->val) * f.val) >> frac_bits;
+            this->val = (static_cast<int32_t>(this->val) * f.raw()) >> frac_bits2;
         return *this;
     }
 
@@ -83,7 +84,8 @@ public:
         return res;
     }
 
-    constexpr Fixed operator *(Fixed f) const
+    template<class T2, int frac_bits2>
+    constexpr Fixed operator *(Fixed<T2, frac_bits2> f) const
     {
         auto res = *this;
         res *= f;
