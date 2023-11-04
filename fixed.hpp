@@ -147,3 +147,9 @@ using Fixed32 = Fixed<int32_t, frac_bits>;
 
 template<int frac_bits = 16>
 using UFixed32 = Fixed<uint32_t, frac_bits>;
+
+template<int frac_bits = 8>
+using Fixed16 = Fixed<int16_t, frac_bits>;
+
+template<int frac_bits = 8>
+using UFixed16 = Fixed<uint16_t, frac_bits>;
