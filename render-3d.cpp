@@ -68,7 +68,10 @@ void fixed32_mvp_pos_shader(const uint8_t *in, Render3D::VertexOutData *out, con
 }
 
 Render3D::Render3D() : tile_surf(reinterpret_cast<uint8_t *>(tile_colour_buffer), PixelFormat::BGR555, {tile_width, tile_height})
-{}
+{
+    for(int i = 0; i < max_textures; i++)
+        textures[i] = nullptr;
+}
 
 void Render3D::draw(int count, const uint8_t *ptr)
 {
@@ -157,6 +160,11 @@ void Render3D::set_position_shader(VertexShaderFunc shader)
 void Render3D::set_vertex_shader(VertexShaderFunc shader)
 {
     vertex_shader = shader;
+}
+
+void Render3D::set_texture(blit::Surface *tex, int index)
+{
+    textures[index] = tex;
 }
 
 int Render3D::get_transformed_vertex_count() const
@@ -338,21 +346,42 @@ void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point ti
         {data[2].r, data[2].g, data[2].b}
     };
 
+    // tex coords/enable
+    auto tex = data[0].tex_index ? textures[data[0].tex_index - 1] : nullptr;
+
+    Fixed16<12> u[3]{data[0].u, data[1].u, data[2].u};
+    Fixed16<12> v[3]{data[0].v, data[1].v, data[2].v};
+
     // sort points
     if(p0.y > p2.y)
     {
         std::swap(p0, p2);
         std::swap(cols[0], cols[2]);
+        if(tex)
+        {
+            std::swap(u[0], u[2]);
+            std::swap(v[0], v[2]);
+        }
     }
     if(p0.y > p1.y)
     {
         std::swap(p0, p1);
         std::swap(cols[0], cols[1]);
+        if(tex)
+        {
+            std::swap(u[0], u[1]);
+            std::swap(v[0], v[1]);
+        }
     }
     if(p1.y > p2.y)
     {
         std::swap(p1, p2);
         std::swap(cols[1], cols[2]);
+        if(tex)
+        {
+            std::swap(u[1], u[2]);
+            std::swap(v[1], v[2]);
+        }
     }
 
     auto p1M0 = p1 - p0;
@@ -416,7 +445,16 @@ void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point ti
             auto start_col = cols[0] + col2M0 * y_frac1;
             auto end_col = cols[0] + col1M0 * y_frac2;
 
-            gradient_h_line(int32_t(start_x), int32_t(end_x), start_z, end_z, y, start_col, end_col);
+            if(tex)
+            {
+                auto start_u = u[0] + (u[2] - u[0]) * y_frac1;
+                auto start_v = v[0] + (v[2] - v[0]) * y_frac1;
+                auto end_u = u[0] + (u[1] - u[0]) * y_frac2;
+                auto end_v = v[0] + (v[1] - v[0]) * y_frac2;
+                textured_h_line(int32_t(start_x), int32_t(end_x), start_z, end_z, y, start_col, end_col, tex, start_u, end_u, start_v, end_v);
+            }
+            else
+                gradient_h_line(int32_t(start_x), int32_t(end_x), start_z, end_z, y, start_col, end_col);
         }
 
 #ifdef PICO_INTERP
@@ -478,8 +516,16 @@ void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point ti
 
             auto start_col = cols[0] + col2M0 * y_frac1;
             auto end_col = cols[1] + col2M1 * y_frac2;
-
-            gradient_h_line(int32_t(start_x), int32_t(end_x), start_z, end_z, y, start_col, end_col);
+            if(tex)
+            {
+                auto start_u = u[0] + (u[2] - u[0]) * y_frac1;
+                auto start_v = v[0] + (v[2] - v[0]) * y_frac1;
+                auto end_u = u[1] + (u[2] - u[1]) * y_frac2;
+                auto end_v = v[1] + (v[2] - v[1]) * y_frac2;
+                textured_h_line(int32_t(start_x), int32_t(end_x), start_z, end_z, y, start_col, end_col, tex, start_u, end_u, start_v, end_v);
+            }
+            else
+                gradient_h_line(int32_t(start_x), int32_t(end_x), start_z, end_z, y, start_col, end_col);
         }
     }
 }
@@ -545,6 +591,91 @@ void blit_fast_code(Render3D::gradient_h_line)(int x1, int x2, uint16_t z1, uint
             continue;
 
         Pen col{uint8_t(r), uint8_t(g), uint8_t(b)};
+
+        *col_ptr = pack_colour(col);
+        *depth_ptr = int32_t(z);
+    }
+}
+
+// the above, but with texture mapping
+void blit_fast_code(Render3D::textured_h_line)(int x1, int x2, uint16_t z1, uint16_t z2, int y, Pen col1, Pen col2, Surface *tex, Fixed16<12> u1, Fixed16<12> u2, Fixed16<12> v1, Fixed16<12> v2)
+{
+    if(x1 > x2)
+    {
+        std::swap(x1, x2);
+        std::swap(z1, z2);
+        std::swap(col1, col2);
+        std::swap(u1, u2);
+        std::swap(v1, v2);
+    }
+
+    // the triangle may be in the tile, but this line is definitely not
+    if(x1 > tile_width || x2 < 0)
+        return;
+
+    auto x_scale = Fixed32<>(1) / (x2 - x1);
+
+    // depth
+    int z_diff = z2 - z1;
+    auto z_step = Fixed32<15>(x_scale) * z_diff;
+    auto z = Fixed32<15>(z1);
+
+    // colour
+    auto col_diff = col2 - col1;
+
+    auto r_step = x_scale * col_diff.r;
+    auto g_step = x_scale * col_diff.g;
+    auto b_step = x_scale * col_diff.b;
+
+    auto r = Fixed32<>(col1.r);
+    auto g = Fixed32<>(col1.g);
+    auto b = Fixed32<>(col1.b);
+
+    // tex
+    auto u_step = Fixed32<>(u2 - u1) * x_scale;
+    auto v_step = Fixed32<>(v2 - v1) * x_scale;
+    auto u = Fixed32<>(u1);
+    auto v = Fixed32<>(v1);
+
+    // clamp x
+    if(x2 > tile_width)
+        x2 = tile_width;
+
+    if(x1 < 0)
+    {
+        z += z_step * -x1;
+        r += r_step * -x1;
+        g += g_step * -x1;
+        b += b_step * -x1;
+        u += u_step * -x1;
+        v += v_step * -x1;
+        x1 = 0;
+    }
+
+    auto col_ptr = tile_colour_buffer + x1 + y * tile_width;
+    auto depth_ptr = tile_depth_buffer + x1 + y * tile_width;
+
+#ifdef PICO_MULTICORE
+    auto core_num = get_core_num();
+    col_ptr += core_num * tile_width * tile_height;
+    depth_ptr += core_num * tile_width * tile_height;
+#endif
+
+    auto end_ptr = col_ptr + (x2 - x1);
+
+    // TODO: config?
+    constexpr int tex_size_bits = 8;
+    constexpr int tex_size = 1 << tex_size_bits;
+
+    for(; col_ptr < end_ptr; col_ptr++, depth_ptr++, z += z_step, r += r_step, g += g_step, b += b_step, u += u_step, v += v_step)
+    {
+        if(int32_t(z) > *depth_ptr)
+            continue;
+
+        // this could be optimised
+        auto tex_col = tex->get_pixel({(u.raw() >> (16 - tex_size_bits)) & (tex_size - 1), (v.raw() >> (16 - tex_size_bits)) & (tex_size - 1)});
+
+        Pen col{(uint8_t(r) * tex_col.r) >> 8, (uint8_t(g) * tex_col.g) >> 8, (uint8_t(b) * tex_col.b) >> 8};
 
         *col_ptr = pack_colour(col);
         *depth_ptr = int32_t(z);

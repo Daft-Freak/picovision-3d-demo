@@ -18,7 +18,8 @@ public:
     struct VertexOutData
     {
         Fixed32<> x, y, z, w;
-        uint8_t r, g, b, a;
+        uint8_t r, g, b, tex_index;
+        Fixed16<12> u, v;
     };
 
     using VertexShaderFunc = void(*)(const uint8_t *, VertexOutData *, const Render3D &);
@@ -40,6 +41,9 @@ public:
     void set_position_shader(VertexShaderFunc shader);
     void set_vertex_shader(VertexShaderFunc shader);
 
+    // tex would be const but blit::Surface is missing some consts...
+    void set_texture(blit::Surface *tex, int index = 0);
+
     int get_transformed_vertex_count() const;
 
     void rasterise();
@@ -50,6 +54,7 @@ protected:
     void fill_triangle(VertexOutData *data, blit::Point tile_pos);
 
     void gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, blit::Pen col1, blit::Pen col2);
+    void textured_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, blit::Pen col1, blit::Pen col2, blit::Surface *tex, Fixed16<12> u1, Fixed16<12> u2, Fixed16<12> v1, Fixed16<12> v2);
 
     uint16_t pack_colour(blit::Pen p);
     blit::Pen unpack_colour(uint16_t c);
@@ -59,6 +64,9 @@ protected:
 
     int vertex_stride = 3;
     VertexShaderFunc position_shader = nullptr, vertex_shader = nullptr;
+
+    static constexpr int max_textures = 1;
+    blit::Surface *textures[max_textures];
 
     VertexOutData transformed_vertices[1024];
     VertexOutData *transformed_vertex_ptr = nullptr;

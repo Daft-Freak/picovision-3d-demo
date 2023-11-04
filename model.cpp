@@ -43,6 +43,8 @@ void model_lit_shader(const uint8_t *in, Render3D::VertexOutData *out, const Ren
     out->r = int32_t(dot * vertex->r);
     out->g = int32_t(dot * vertex->g);
     out->b = int32_t(dot * vertex->b);
+
+    out->tex_index = 0;
 }
 
 Model::Model(const uint8_t *asset_data)
