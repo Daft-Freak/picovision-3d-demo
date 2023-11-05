@@ -202,6 +202,26 @@ void Render3D::rasterise()
 
     interp_set_config(interp0, 0, &config);
     interp_set_config(interp0, 1, &config);
+
+    // TODO: config?
+    // also duplicated
+    constexpr int tex_size_bits = 8; // can't be > 8
+
+    // texture mapping
+    config = interp_default_config();
+    // x
+    interp_config_set_shift(&config, 16 - tex_size_bits); // 16 bit fraction, shift out unneeded low bits
+    interp_config_set_mask(&config, 0, tex_size_bits - 1);
+    interp_config_set_add_raw(&config, true); 
+    interp_set_config(interp1, 0, &config);
+
+    // y
+    interp_config_set_shift(&config, (16 - tex_size_bits) - tex_size_bits); // similar but less shifted to effectively multiply by width
+    interp_config_set_mask(&config, tex_size_bits, tex_size_bits + tex_size_bits - 1);
+    interp_set_config(interp1, 1, &config);
+
+    // this should result in the texture offset in the full result
+
 #endif
 
     uint16_t clear_col = pack_colour({127, 127, 127});
@@ -663,17 +683,35 @@ void blit_fast_code(Render3D::textured_h_line)(int x1, int x2, uint16_t z1, uint
 
     auto end_ptr = col_ptr + (x2 - x1);
 
+#ifdef PICO_INTERP
+    interp1->accum[0] = u.raw();
+    interp1->accum[1] = v.raw();
+
+    interp1->base[0] = u_step.raw();
+    interp1->base[1] = v_step.raw();
+    interp1->base[2] = 0; // could be the data address if we assume a paletted surface...
+
+    for(; col_ptr < end_ptr; col_ptr++, depth_ptr++, z += z_step, r += r_step, g += g_step, b += b_step)
+    {
+        auto tex_offset = interp1->pop[2];
+#else
+
     // TODO: config?
     constexpr int tex_size_bits = 8;
     constexpr int tex_size = 1 << tex_size_bits;
 
     for(; col_ptr < end_ptr; col_ptr++, depth_ptr++, z += z_step, r += r_step, g += g_step, b += b_step, u += u_step, v += v_step)
     {
+#endif
         if(int32_t(z) > *depth_ptr)
             continue;
 
         // this could be optimised
+#ifdef PICO_INTERP
+        auto tex_col = tex->get_pixel(tex_offset);
+#else
         auto tex_col = tex->get_pixel({(u.raw() >> (16 - tex_size_bits)) & (tex_size - 1), (v.raw() >> (16 - tex_size_bits)) & (tex_size - 1)});
+#endif
 
         Pen col{(uint8_t(r) * tex_col.r) >> 8, (uint8_t(g) * tex_col.g) >> 8, (uint8_t(b) * tex_col.b) >> 8};
 
