@@ -1,10 +1,10 @@
-title: Cube
-description: A cube. It spins.
+title: PicoVision
+description: A PicoVision on your PicoVision... or other device.
 author: Daft_Freak
 splash:
   file: assets/no-image.png
 icon:
   file: assets/no-icon.png
-version: v0.0.1
+version: v1.0.0
 category: demo
-#url: https://github.com/Daft-Freak/picovision-3d-demo
+url: https://github.com/Daft-Freak/picovision-3d-demo
