@@ -44,14 +44,17 @@ auto_init_mutex(blit_mutex);
 
 static void core1_entry()
 {
-    // get renderer
-    auto render3d = reinterpret_cast<Render3D *>(multicore_fifo_pop_blocking());
+    while(true)
+    {
+        // get renderer
+        auto render3d = reinterpret_cast<Render3D *>(multicore_fifo_pop_blocking());
 
-    // render the other half
-    render3d->rasterise();
+        // render the other half
+        render3d->rasterise();
 
-    // done
-    multicore_fifo_push_blocking(0);
+        // done
+        multicore_fifo_push_blocking(0);
+    }
 }
 #endif
 
@@ -71,6 +74,12 @@ Render3D::Render3D() : tile_surf(reinterpret_cast<uint8_t *>(tile_colour_buffer)
 {
     for(int i = 0; i < max_textures; i++)
         textures[i] = nullptr;
+
+#ifdef PICO_MULTICORE
+    // we own core1 now
+    // theoretically this could handle multiple instances
+    multicore_launch_core1(core1_entry);
+#endif
 }
 
 void Render3D::draw(int count, const uint8_t *ptr)
@@ -185,7 +194,6 @@ void Render3D::rasterise()
     auto core_num = get_core_num();
     if(core_num == 0)
     {
-        multicore_launch_core1(core1_entry);
         multicore_fifo_push_blocking(reinterpret_cast<uintptr_t>(this));
     }
 #endif
@@ -299,7 +307,6 @@ void Render3D::rasterise()
     {
         // wait for core1 and reset
         multicore_fifo_pop_blocking();
-        multicore_reset_core1();
     }
     else
         return; // don't reset vertex ptr on core1
