@@ -44,6 +44,8 @@ auto_init_mutex(blit_mutex);
 
 enum class Core1Job
 {
+    NoOp,
+    Draw,
     Rasterise,
 };
 
@@ -57,14 +59,23 @@ static void core1_entry()
 
         switch(job_type)
         {
+            case Core1Job::NoOp:
+                multicore_fifo_push_blocking(0);
+                break;
+
+            case Core1Job::Draw:
+            {
+                int count = multicore_fifo_pop_blocking();
+                auto ptr = reinterpret_cast<const uint8_t *>(multicore_fifo_pop_blocking());
+                render3d->draw(count, ptr);
+                break;
+            }
+
             case Core1Job::Rasterise:
                 // render the other half
                 render3d->rasterise();
                 break;
         }
-
-        // done
-        multicore_fifo_push_blocking(0);
     }
 }
 #endif
@@ -98,14 +109,42 @@ void Render3D::draw(int count, const uint8_t *ptr)
     if(!transformed_vertex_ptr)
         transformed_vertex_ptr = transformed_vertices;
 
+    auto trans = transformed_vertex_ptr;
+
+#ifdef PICO_MULTICORE
+    auto core_num = get_core_num();
+    if(core_num == 0)
+    {
+        multicore_fifo_push_blocking(reinterpret_cast<uintptr_t>(this));
+
+        if(count > 3)
+        {
+            multicore_fifo_push_blocking(uint32_t(Core1Job::Draw));
+            multicore_fifo_push_blocking(count);
+            multicore_fifo_push_blocking(reinterpret_cast<uintptr_t>(ptr));
+        }
+        else // push no-op job for the wait at the end
+            multicore_fifo_push_blocking(uint32_t(Core1Job::NoOp));
+    }
+    else
+    {
+        // offset by one triangle
+        ptr += 3 * vertex_stride;
+        trans += 3;
+        count -= 3;
+    }
+
+    const int stride = 6; // two triangles
+#else
+    const int stride = 3; // a triangle
+#endif
+
     // triangles
-    for(int i = 0; i < count; i += 3)
+    for(int i = 0; i < count; i += stride)
     {
         // vertex limit reached
-        if(transformed_vertex_ptr + 3 >= transformed_vertices + std::size(transformed_vertices))
+        if(trans + 3 >= transformed_vertices + std::size(transformed_vertices))
             break;
-
-        auto trans = transformed_vertex_ptr;
 
         // calculate final positions
         for(int j = 0; j < 3; j++)
@@ -134,8 +173,41 @@ void Render3D::draw(int count, const uint8_t *ptr)
             vertex_shader(ptr + (i + j) * vertex_stride, trans + j, *this);
 
         // TODO: clipping
-        transformed_vertex_ptr += 3;
+        trans += stride;
     }
+
+#ifdef PICO_MULTICORE
+    if(core_num == 0)
+    {
+        auto trans2 = reinterpret_cast<VertexOutData *>(multicore_fifo_pop_blocking());
+
+        if(trans2 > trans)
+            std::swap(trans2, trans);
+
+        while(trans2 < trans - 3)
+        {
+            // uhoh, we have gaps
+            // move a triangle from the longer list to the shorter one
+            memcpy(trans2, trans - 6, sizeof(VertexOutData) * 3);
+            trans2 += 6;
+            trans -= 6;
+        }
+
+        // might've tipped the balance the other way
+        if(trans2 > trans)
+            trans = trans2;
+
+        // adjust back (we skipped one triangle ahead)
+        trans -= 3;
+    }
+    else
+    {
+        multicore_fifo_push_blocking(reinterpret_cast<intptr_t>(trans));
+        return;
+    }
+#endif
+
+    transformed_vertex_ptr = trans;
 }
 
 const FixedMat4<> &Render3D::get_model_view() const
@@ -321,7 +393,10 @@ void Render3D::rasterise()
         multicore_fifo_pop_blocking();
     }
     else
+    {
+        multicore_fifo_push_blocking(0); // done
         return; // don't reset vertex ptr on core1
+    }
 #endif
 
     transformed_vertex_ptr = nullptr;
