@@ -42,15 +42,26 @@ Pen operator +(Pen p, PenDelta d)
 #ifdef PICO_MULTICORE
 auto_init_mutex(blit_mutex);
 
+enum class Core1Job
+{
+    Rasterise,
+};
+
 static void core1_entry()
 {
     while(true)
     {
         // get renderer
         auto render3d = reinterpret_cast<Render3D *>(multicore_fifo_pop_blocking());
+        auto job_type = Core1Job(multicore_fifo_pop_blocking());
 
-        // render the other half
-        render3d->rasterise();
+        switch(job_type)
+        {
+            case Core1Job::Rasterise:
+                // render the other half
+                render3d->rasterise();
+                break;
+        }
 
         // done
         multicore_fifo_push_blocking(0);
@@ -195,6 +206,7 @@ void Render3D::rasterise()
     if(core_num == 0)
     {
         multicore_fifo_push_blocking(reinterpret_cast<uintptr_t>(this));
+        multicore_fifo_push_blocking(uint32_t(Core1Job::Rasterise));
     }
 #endif
 
