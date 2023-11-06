@@ -105,6 +105,7 @@ void update(uint32_t time)
 
 void render(uint32_t time)
 {
+    [[maybe_unused]]
     auto render_start = now_us();
 
     auto translation = FixedMat4<>::translation(Vec3(0.0f, 0.0f, -4.0f));
@@ -113,19 +114,29 @@ void render(uint32_t time)
     auto rot_x = FixedMat4<>::rotation(ang2, Vec3{1.0f, 0.0f, 0.0f});
     r3d.set_model_view(translation * scale_mat * rot_y * rot_x);
 
+    [[maybe_unused]]
     auto vert_start = now_us();
+
     r3d.set_position_shader(fixed32_mvp_pos_shader);
     r3d.set_vertex_shader(model_lit_shader);
     model.draw(r3d);
+
+    [[maybe_unused]]
     auto vert_end = now_us();
 
+    [[maybe_unused]]
     auto vertex_count = r3d.get_transformed_vertex_count();
 
+    [[maybe_unused]]
     auto frag_start = now_us();
+
     r3d.rasterise();
+
+    [[maybe_unused]]
     auto frag_end = now_us();
 
     // debug stats
+    /*
     screen.pen = {255, 0, 0};
     char buf[100];
     snprintf(buf, sizeof(buf), "V %6" PRIi32 "us\nF %6" PRIi32 "us\nR %6" PRIi32 "us\nT %6i",
@@ -136,4 +147,5 @@ void render(uint32_t time)
     );
 
     screen.text(buf, minimal_font, {0, 0}, false);
+    */
 }
