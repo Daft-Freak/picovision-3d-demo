@@ -115,14 +115,17 @@ def handle_mesh(filename, json_data, json_mesh, matrix):
 
         index_data = get_accessor_data(filename, json_data, index_accessor, False)
 
-        # check if material is textures
-        material_id = primitive['material']
-        material = json_data['materials'][material_id]
-
-        # TODO: other material types?
+        # check if material is textured
+        material = None
         tex_id = 0 # no tex
-        if 'pbrMetallicRoughness' in material and 'baseColorTexture' in material['pbrMetallicRoughness']:
-            tex_id = material['pbrMetallicRoughness']['baseColorTexture']['index'] + 1
+
+        if 'material' in primitive:
+            material_id = primitive['material']
+            material = json_data['materials'][material_id]
+
+            # TODO: other material types?
+            if 'pbrMetallicRoughness' in material and 'baseColorTexture' in material['pbrMetallicRoughness']:
+                tex_id = material['pbrMetallicRoughness']['baseColorTexture']['index'] + 1
 
         # triangles
         for i in index_data:
