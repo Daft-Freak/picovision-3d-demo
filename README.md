@@ -1,33 +1,15 @@
-# 32Blit Boilerplate
+# PicoVision 3D Demo
 
-![Build](https://github.com/32blit/32blit-boilerplate/workflows/Build/badge.svg)
+3D demo of a PicoVision... on a PicoVision, or since this is using the 32blit SDK, another device (may require adjusting max triangles and/or tile size).
 
-This is a basic template for starting 32blit projects. It shows the basic
-code layout and asset pipeline, hopefully giving folk a starting point for
-any new projects.
 
-It's based on the original `template` project from the 
-[32Blit SDK](https://github.com/32blit/32blit-sdk), with added asset
-handling, and some tidying up to fit in with how I do things.
+On an RP2040-based device uses both cores and both interpolators (on each core) for more speed.
 
-## Usage
 
-[Use this template](https://github.com/32blit/32blit-boilerplate/generate) to
-generate your own project.
+## Building
 
-* Edit the CMakeList.txt file to set the name of your project
-* Edit the metadata.yml file to set the information for your project
-* Edit the LICENSE file to set your name on the license
-* Write lots of super cool code!
-
-You should then be able to follow the usual build instructions.
-
-For local builds this is:
 ```
-mkdir build
-cd build
-cmake -D32BLIT_DIR=/path/to/32blit-sdk/ ..
+cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=/path/to/32blit-sdk/pico.toolchain -DPICO_BOARD=pico_w -DPICO_ADDON=pimoroni_picovision
+ninja -C build
 ```
-
-Platform/Editor specific insctuctions [can be found in the main 32blit repo](https://github.com/32blit/32blit-sdk#you-will-need)
-(For Visual Studio, you should follow the "Option 2" instructions, as the boilerplate does not contain a solution file)
+... or however you usually build 32blit SDK projects for your favourite device.
