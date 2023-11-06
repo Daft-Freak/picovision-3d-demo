@@ -61,7 +61,8 @@ Mat4 frustum(float left, float right, float bottom, float top, float nearVal, fl
 
 static Render3D r3d;
 static float ang = 0.0f, ang2 = 0.0f;
-static Model model(asset_cube);
+static Model model(asset_picovision);
+static Surface *picovision_tex;
 
 void init()
 {
@@ -74,6 +75,9 @@ void init()
     auto nearH = near * tanFov;
     auto nearW = nearH * (double(screen.bounds.w) / screen.bounds.h);
     r3d.set_projection(frustum(-nearW, nearW, -nearH, nearH, near, far));
+
+    picovision_tex = Surface::load(asset_picovision_tex);
+    r3d.set_texture(picovision_tex, 0);
 }
 
 void update(uint32_t time)
@@ -87,7 +91,7 @@ void render(uint32_t time)
     auto render_start = now_us();
 
     auto translation = FixedMat4<>::translation(Vec3(0.0f, 0.0f, -4.0f));
-    auto scale = FixedMat4<>::scale({1.0f, 1.0f, 1.0f});
+    auto scale = FixedMat4<>::scale({40.0f, 40.0f, 40.0f});
     auto rot_y = FixedMat4<>::rotation(ang, Vec3{0.0f, 1.0f, 0.0f});
     auto rot_x = FixedMat4<>::rotation(ang2, Vec3{1.0f, 0.0f, 0.0f});
     r3d.set_model_view(translation * scale * rot_y * rot_x);

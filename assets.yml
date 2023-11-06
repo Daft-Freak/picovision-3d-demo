@@ -6,3 +6,5 @@ assets.cpp:
   assets/*.bin:
     name: asset_{filename}
 
+  assets/picovision-tex.png:
+    name: asset_picovision_tex
