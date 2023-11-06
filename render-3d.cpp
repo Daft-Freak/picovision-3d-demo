@@ -237,19 +237,24 @@ void Render3D::rasterise()
     // offset for per-core tile buffers
     col_buf += core_num * tile_width * tile_height;
     depth_buf += core_num * tile_width * tile_height;
+    bool offset_row = core_num == 1;
 #endif
 
     // rasterise triangles for each screen tile
     for(int y = 0; y < screen.bounds.h; y += tile_height)
     {
-        for(int x = 0; x < screen.bounds.w; x += tile_width)
-        {
 #ifdef PICO_MULTICORE
-            // split tiles between cores
-            if((((x / tile_width) + (y / tile_height)) & 1) != core_num)
-                continue;
+        // split tiles between cores
+        // C0 C1 C0 ...
+        // C1 C0 C1 ...
+        // ...
+        int start_x = offset_row ? 0 : tile_width;
+        offset_row = !offset_row;
+        for(int x = start_x; x < screen.bounds.w; x += tile_width * 2)
+#else
+        for(int x = 0; x < screen.bounds.w; x += tile_width)
 #endif
-
+        {
             // clear
             // TODO: load/store for multi-pass? (UNLIMITED PO... triangles)
             auto tile_ptr32 = reinterpret_cast<uint32_t *>(col_buf);
