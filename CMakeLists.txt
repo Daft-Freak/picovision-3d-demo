@@ -7,8 +7,6 @@ project(game)
 # Add your sources here (adding headers is optional, but helps some CMake generators)
 set(PROJECT_SOURCE
   game.cpp
-  model.cpp
-  render-3d.cpp
 )
 
 # ... and any other files you want in the release here
@@ -22,8 +20,10 @@ else()
 endif()
 
 find_package (32BLIT CONFIG REQUIRED PATHS ../32blit-sdk $ENV{PATH_32BLIT_SDK})
+find_package (THR3E CONFIG REQUIRED PATHS lib)
 
 blit_executable (${PROJECT_NAME} ${PROJECT_SOURCE})
+target_link_libraries(${PROJECT_NAME} THR3E)
 blit_assets_yaml (${PROJECT_NAME} assets.yml)
 blit_metadata (${PROJECT_NAME} metadata.yml)
 add_custom_target (flash DEPENDS ${PROJECT_NAME}.flash)
