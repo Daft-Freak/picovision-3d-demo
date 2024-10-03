@@ -4,13 +4,9 @@
 #include "graphics/surface.hpp"
 #include "types/point.hpp"
 
+#include "config.h"
 #include "fixed-mat4.hpp"
 
-#ifdef PICO_BUILD
-// tiny bit of config
-#define PICO_INTERP
-#define PICO_MULTICORE
-#endif
 
 class Render3D
 {
@@ -72,7 +68,7 @@ protected:
     VertexOutData *transformed_vertex_ptr = nullptr;
 
     static constexpr int tile_width = 160, tile_height = 80;
-#ifdef PICO_MULTICORE
+#if PICO_MULTICORE
     static constexpr int num_tile_bufs = 2;
 #else
     static constexpr int num_tile_bufs = 1;
