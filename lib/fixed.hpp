@@ -130,6 +130,37 @@ public:
         return ret;
     }
 
+    // comparisons
+    constexpr bool operator ==(Fixed f) const
+    {
+        return val == f.val;
+    }
+
+    constexpr bool operator !=(Fixed f) const
+    {
+        return val != f.val;
+    }
+
+    constexpr bool operator <(Fixed f) const
+    {
+        return val < f.val;
+    }
+
+    constexpr bool operator >(Fixed f) const
+    {
+        return val > f.val;
+    }
+
+    constexpr bool operator <=(Fixed f) const
+    {
+        return val <= f.val;
+    }
+
+    constexpr bool operator >=(Fixed f) const
+    {
+        return val >= f.val;
+    }
+
     inline T raw() const {return val;}
 
     static Fixed from_raw(T val)
