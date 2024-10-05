@@ -168,9 +168,23 @@ void Render3D::draw(int count, const uint8_t *ptr)
         if(z < 0)
             continue;
 
+        // far plane
+        // TODO: clip
+        if(trans[0].z > 1 || trans[1].z > 1 || trans[2].z > 1)
+            continue;
+
+        // near plane
+        // TODO: clip
+        if(trans[0].z < -1 || trans[1].z < -1 || trans[2].z < -1)
+            continue;
+
         // calculate the rest of the attributes
-        for(int j = 0; j < 3; j++)
+        for(int j = 0; j < 3; j++) {
+            // also convert z to uint16
+            trans[j].z = (trans[j].z + 1) * Fixed32<>(32767.5f);
+
             vertex_shader(ptr + (i + j) * vertex_stride, trans + j, *this);
+        }
 
         // TODO: clipping
         trans += stride;
@@ -415,7 +429,6 @@ void Render3D::transform_vertex(VertexOutData &pos)
     // viewport
     pos.x = Fixed32<>(viewport.x) + (pos.x + 1) * (viewport.w / 2);
     pos.y = Fixed32<>(viewport.y) + (pos.y + 1) * (viewport.h / 2);
-    pos.z = (pos.z + 1) * Fixed32<>(32767.5f);
 }
 
 void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point tile_pos)
