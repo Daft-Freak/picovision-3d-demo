@@ -419,10 +419,11 @@ void Render3D::rasterise()
 void Render3D::transform_vertex(VertexOutData &pos)
 {
     // perspective
-    pos.w = pos.w.reciprocal();
-    pos.x *= pos.w;
-    pos.y *= pos.w;
-    pos.z *= pos.w;
+    auto recip_w = Fixed32<20>(1) / Fixed32<20>(pos.w); // .reciprocal is way too inaccurate above 16 frac bits
+
+    pos.x *= recip_w;
+    pos.y *= recip_w;
+    pos.z *= recip_w;
 
     Rect viewport{0, 0, screen.bounds.w, screen.bounds.h};
 
