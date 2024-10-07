@@ -153,19 +153,8 @@ void Render3D::draw(int count, const uint8_t *ptr)
             transform_vertex(trans[j]);
         }
 
-        // back-face culling
-        auto ab_x = int32_t(trans[1].x) - int32_t(trans[0].x);
-        auto ab_y = int32_t(trans[1].y) - int32_t(trans[0].y);
-        auto ac_x = int32_t(trans[2].x) - int32_t(trans[0].x);
-        auto ac_y = int32_t(trans[2].y) - int32_t(trans[0].y);
-
-        // nothing to draw
-        if((ab_x == 0 && ab_y == 0) || (ac_x == 0 && ac_y == 0))
-            continue;
-
-        int32_t z = ab_x * ac_y - ab_y * ac_x;
-
-        if(z < 0)
+        // cull back faces and empty
+        if(cull_triangle(trans))
             continue;
 
         // far plane
@@ -430,6 +419,26 @@ void Render3D::transform_vertex(VertexOutData &pos)
     // viewport
     pos.x = Fixed32<>(viewport.x) + (pos.x + 1) * (viewport.w / 2);
     pos.y = Fixed32<>(viewport.y) + (pos.y + 1) * (viewport.h / 2);
+}
+
+bool Render3D::cull_triangle(VertexOutData *verts)
+{
+    // back-face culling
+    auto ab_x = int32_t(verts[1].x) - int32_t(verts[0].x);
+    auto ab_y = int32_t(verts[1].y) - int32_t(verts[0].y);
+    auto ac_x = int32_t(verts[2].x) - int32_t(verts[0].x);
+    auto ac_y = int32_t(verts[2].y) - int32_t(verts[0].y);
+
+    // nothing to draw
+    if((ab_x == 0 && ab_y == 0) || (ac_x == 0 && ac_y == 0))
+        return true;
+
+    int32_t z = ab_x * ac_y - ab_y * ac_x;
+
+    if(z < 0)
+        return true;
+
+    return false;
 }
 
 void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point tile_pos)

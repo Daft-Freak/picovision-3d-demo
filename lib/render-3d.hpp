@@ -47,6 +47,8 @@ public:
 protected:
     void transform_vertex(VertexOutData &pos);
 
+    bool cull_triangle(VertexOutData *verts);
+
     void fill_triangle(VertexOutData *data, blit::Point tile_pos);
 
     void gradient_h_line(int x1, int x2, uint16_t z1, uint16_t z2, int y, blit::Pen col1, blit::Pen col2);
