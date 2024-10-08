@@ -39,7 +39,7 @@ Pen operator +(Pen p, PenDelta d)
     return {uint8_t(p.r + d.r), uint8_t(p.g + d.g), uint8_t(p.b + d.b), uint8_t(p.a + d.a)};
 }
 
-#if PICO_MULTICORE
+#if THR3E_PICO_MULTICORE
 auto_init_mutex(blit_mutex);
 
 enum class Core1Job
@@ -97,7 +97,7 @@ Render3D::Render3D() : tile_surf(reinterpret_cast<uint8_t *>(tile_colour_buffer)
     for(int i = 0; i < max_textures; i++)
         textures[i] = nullptr;
 
-#if PICO_MULTICORE
+#if THR3E_PICO_MULTICORE
     // we own core1 now
     // theoretically this could handle multiple instances
     multicore_launch_core1(core1_entry);
@@ -111,7 +111,7 @@ void Render3D::draw(int count, const uint8_t *ptr)
 
     auto trans = transformed_vertex_ptr;
 
-#if PICO_MULTICORE
+#if THR3E_PICO_MULTICORE
     auto core_num = get_core_num();
     if(core_num == 0)
     {
@@ -258,7 +258,7 @@ void Render3D::draw(int count, const uint8_t *ptr)
             trans += stride;
     }
 
-#if PICO_MULTICORE
+#if THR3E_PICO_MULTICORE
     if(core_num == 0)
     {
         auto trans2 = reinterpret_cast<VertexOutData *>(multicore_fifo_pop_blocking());
@@ -354,7 +354,7 @@ void Render3D::rasterise()
     if(!transformed_vertex_ptr)
         return;
 
-#if PICO_MULTICORE
+#if THR3E_PICO_MULTICORE
     // launch the other core if needed
     auto core_num = get_core_num();
     if(core_num == 0)
@@ -364,7 +364,7 @@ void Render3D::rasterise()
     }
 #endif
 
-#if PICO_INTERP
+#if THR3E_PICO_INTERP
     // setup interpolators
     auto config = interp_default_config();
 
@@ -407,7 +407,7 @@ void Render3D::rasterise()
     auto depth_buf = tile_depth_buffer;
     const auto tile_buf_size = sizeof(tile_colour_buffer) / num_tile_bufs;
 
-#if PICO_MULTICORE
+#if THR3E_PICO_MULTICORE
     // offset for per-core tile buffers
     col_buf += core_num * tile_width * tile_height;
     depth_buf += core_num * tile_width * tile_height;
@@ -417,7 +417,7 @@ void Render3D::rasterise()
     // rasterise triangles for each screen tile
     for(int y = 0; y < screen.bounds.h; y += tile_height)
     {
-#if PICO_MULTICORE
+#if THR3E_PICO_MULTICORE
         // split tiles between cores
         // C0 C1 C0 ...
         // C1 C0 C1 ...
@@ -447,7 +447,7 @@ void Render3D::rasterise()
             if(screen.format == PixelFormat::BGR555)
             {
                 // assume picovision, which has a 555 -> 555 blit
-#if PICO_MULTICORE
+#if THR3E_PICO_MULTICORE
                 // blitting on both cores at once would blow up
                 mutex_enter_blocking(&blit_mutex);
 #endif
@@ -455,7 +455,7 @@ void Render3D::rasterise()
                 tile_surf.data = reinterpret_cast<uint8_t *>(col_buf);
                 screen.blit(&tile_surf, {0, 0, tile_width, tile_height}, {x, y});
 
-#if PICO_MULTICORE
+#if THR3E_PICO_MULTICORE
                 mutex_exit(&blit_mutex);
 #endif
             }
@@ -468,7 +468,7 @@ void Render3D::rasterise()
         }
     }
 
-#if PICO_MULTICORE
+#if THR3E_PICO_MULTICORE
     if(core_num == 0)
     {
         // wait for core1 and reset
@@ -736,7 +736,7 @@ void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point ti
             y_start = 0;
         }
 
-#if PICO_INTERP
+#if THR3E_PICO_INTERP
         interp0->accum[0] = start_x.raw();
         interp0->base[0] = start_x_step.raw();
         interp0->accum[1] = end_x.raw();
@@ -772,7 +772,7 @@ void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point ti
                 gradient_h_line(int32_t(start_x), int32_t(end_x), start_z, end_z, y, start_col, end_col);
         }
 
-#if PICO_INTERP
+#if THR3E_PICO_INTERP
         // read back out
         start_x = Fixed32<>::from_raw(interp0->accum[0]);
 #endif
@@ -808,7 +808,7 @@ void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point ti
             y_start = 0;
         }
 
-#if PICO_INTERP
+#if THR3E_PICO_INTERP
         interp0->accum[0] = start_x.raw();
         interp0->base[0] = start_x_step.raw();
         interp0->accum[1] = end_x.raw();
@@ -892,7 +892,7 @@ void blit_fast_code(Render3D::gradient_h_line)(int x1, int x2, uint16_t z1, uint
     auto col_ptr = tile_colour_buffer + x1 + y * tile_width;
     auto depth_ptr = tile_depth_buffer + x1 + y * tile_width;
 
-#if PICO_MULTICORE
+#if THR3E_PICO_MULTICORE
     auto core_num = get_core_num();
     col_ptr += core_num * tile_width * tile_height;
     depth_ptr += core_num * tile_width * tile_height;
@@ -970,7 +970,7 @@ void blit_fast_code(Render3D::textured_h_line)(int x1, int x2, uint16_t z1, uint
     auto col_ptr = tile_colour_buffer + x1 + y * tile_width;
     auto depth_ptr = tile_depth_buffer + x1 + y * tile_width;
 
-#if PICO_MULTICORE
+#if THR3E_PICO_MULTICORE
     auto core_num = get_core_num();
     col_ptr += core_num * tile_width * tile_height;
     depth_ptr += core_num * tile_width * tile_height;
@@ -978,7 +978,7 @@ void blit_fast_code(Render3D::textured_h_line)(int x1, int x2, uint16_t z1, uint
 
     auto end_ptr = col_ptr + (x2 - x1);
 
-#if PICO_INTERP
+#if THR3E_PICO_INTERP
     interp1->accum[0] = u.raw();
     interp1->accum[1] = v.raw();
 
@@ -1002,7 +1002,7 @@ void blit_fast_code(Render3D::textured_h_line)(int x1, int x2, uint16_t z1, uint
             continue;
 
         // this could be optimised
-#if PICO_INTERP
+#if THR3E_PICO_INTERP
         auto tex_col = tex->get_pixel(tex_offset);
 #else
         auto tex_col = tex->get_pixel({(u.raw() >> (16 - tex_size_bits)) & (tex_size - 1), (v.raw() >> (16 - tex_size_bits)) & (tex_size - 1)});

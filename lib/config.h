@@ -2,15 +2,15 @@
 
 #ifdef PICO_BUILD
 // default to fast
-#ifndef PICO_INTERP
-#define PICO_INTERP 1
+#ifndef THR3E_PICO_INTERP
+#define THR3E_PICO_INTERP 1
 #endif
 
-#ifndef PICO_MULTICORE
-#define PICO_MULTICORE 1
+#ifndef THR3E_PICO_MULTICORE
+#define THR3E_PICO_MULTICORE 1
 #endif
 #else
 // not a pico so these make no sense
-#undef PICO_INTERP
-#undef PICO_MULTICORE
+#undef THR3E_PICO_INTERP
+#undef THR3E_PICO_MULTICORE
 #endif
