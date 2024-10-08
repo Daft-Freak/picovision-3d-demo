@@ -67,10 +67,10 @@ protected:
     static constexpr int max_textures = 1;
     blit::Surface *textures[max_textures];
 
-    VertexOutData transformed_vertices[1024];
+    VertexOutData transformed_vertices[THR3E_MAX_OUTPUT_VERTICES];
     VertexOutData *transformed_vertex_ptr = nullptr;
 
-    static constexpr int tile_width = 160, tile_height = 80;
+    static constexpr int tile_width = THR3E_TILE_WIDTH, tile_height = THR3E_TILE_HEIGHT;
 #if THR3E_PICO_MULTICORE
     static constexpr int num_tile_bufs = 2;
 #else
