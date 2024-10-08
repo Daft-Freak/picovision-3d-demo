@@ -48,6 +48,7 @@ protected:
     void transform_vertex(VertexOutData &pos);
 
     bool cull_triangle(VertexOutData *verts);
+    bool clip_triangle(VertexOutData *verts, Fixed32<> bound, int verts_outside, Fixed32<20> out_factors[2 * 3 * 3]);
 
     void fill_triangle(VertexOutData *data, blit::Point tile_pos);
 

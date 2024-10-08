@@ -143,40 +143,119 @@ void Render3D::draw(int count, const uint8_t *ptr)
     for(int i = 0; i < count; i += stride)
     {
         // vertex limit reached
-        if(trans + 3 >= transformed_vertices + std::size(transformed_vertices))
+        // check two triangles for clipping pessimism
+        if(trans + stride + 3 >= transformed_vertices + std::size(transformed_vertices))
             break;
 
         // calculate final positions
         for(int j = 0; j < 3; j++)
-        {
             position_shader(ptr + (i + j) * vertex_stride, trans + j, *this);
+
+
+        // test against near/far planes
+        int far_out = 0, near_out = 0;
+
+        for(int i = 0; i < 3; i++)
+        {
+            if(trans[i].z > trans[i].w)
+                far_out += 1 << i;
+            else if(trans[i].z < -trans[i].w)
+                near_out += 1 << i;
+        }
+
+        // crosses both planes, that's one big triangle...
+        if(near_out && far_out)
+            continue;
+
+        // entirely outside
+        if(near_out == 7 || far_out == 7)
+            continue;
+
+        Fixed32<20> clipped_factors[2 * 3 * 3];
+        bool add_triangle = false;
+
+        // far plane
+        if(far_out)
+            add_triangle = clip_triangle(trans, 1, far_out, clipped_factors);
+        // near plane
+        else if(near_out)
+            add_triangle = clip_triangle(trans, -1, near_out, clipped_factors);
+
+        bool clipped = near_out || far_out;
+
+        // calculate the rest of the attributes
+        for(int j = 0; j < 3; j++)
+            vertex_shader(ptr + (i + j) * vertex_stride, trans + j, *this);
+
+        // apply clipping to attributes now that we have them
+        if(clipped)
+        {
+            VertexOutData temp[3];
+            // blend ALL the attributes
+            for(int j = 0; j < 3; j++)
+            {
+                temp[j].x = trans[0].x * clipped_factors[j * 3 + 0] + trans[1].x * clipped_factors[j * 3 + 1] + trans[2].x * clipped_factors[j * 3 + 2];
+                temp[j].y = trans[0].y * clipped_factors[j * 3 + 0] + trans[1].y * clipped_factors[j * 3 + 1] + trans[2].y * clipped_factors[j * 3 + 2];
+                temp[j].z = trans[0].z * clipped_factors[j * 3 + 0] + trans[1].z * clipped_factors[j * 3 + 1] + trans[2].z * clipped_factors[j * 3 + 2];
+                temp[j].w = trans[0].w * clipped_factors[j * 3 + 0] + trans[1].w * clipped_factors[j * 3 + 1] + trans[2].w * clipped_factors[j * 3 + 2];
+
+                temp[j].r = uint8_t(Fixed32<>(trans[0].r) * clipped_factors[j * 3 + 0] + Fixed32<>(trans[1].r) * clipped_factors[j * 3 + 1] + Fixed32<>(trans[2].r) * clipped_factors[j * 3 + 2]);
+                temp[j].g = uint8_t(Fixed32<>(trans[0].g) * clipped_factors[j * 3 + 0] + Fixed32<>(trans[1].g) * clipped_factors[j * 3 + 1] + Fixed32<>(trans[2].g) * clipped_factors[j * 3 + 2]);
+                temp[j].b = uint8_t(Fixed32<>(trans[0].b) * clipped_factors[j * 3 + 0] + Fixed32<>(trans[1].b) * clipped_factors[j * 3 + 1] + Fixed32<>(trans[2].b) * clipped_factors[j * 3 + 2]);
+
+                temp[j].tex_index = trans[0].tex_index; // tex index can't be blended
+
+                temp[j].u = Fixed16<12>(clipped_factors[j * 3 + 0] * trans[0].u + clipped_factors[j * 3 + 1] * trans[1].u + clipped_factors[j * 3 + 2] * trans[2].u);
+                temp[j].v = Fixed16<12>(clipped_factors[j * 3 + 0] * trans[0].v + clipped_factors[j * 3 + 1] * trans[1].v + clipped_factors[j * 3 + 2] * trans[2].v);
+            }
+
+            // second tri
+            if(add_triangle)
+            {
+                auto trans2 = trans + stride;
+                auto factors = clipped_factors + 3 * 3;
+                for(int j = 0; j < 3; j++)
+                {
+                    trans2[j].x = trans[0].x * factors[j * 3 + 0] + trans[1].x * factors[j * 3 + 1] + trans[2].x * factors[j * 3 + 2];
+                    trans2[j].y = trans[0].y * factors[j * 3 + 0] + trans[1].y * factors[j * 3 + 1] + trans[2].y * factors[j * 3 + 2];
+                    trans2[j].z = trans[0].z * factors[j * 3 + 0] + trans[1].z * factors[j * 3 + 1] + trans[2].z * factors[j * 3 + 2];
+                    trans2[j].w = trans[0].w * factors[j * 3 + 0] + trans[1].w * factors[j * 3 + 1] + trans[2].w * factors[j * 3 + 2];
+
+                    trans2[j].r = uint8_t(Fixed32<>(trans[0].r) * factors[j * 3 + 0] + Fixed32<>(trans[1].r) * factors[j * 3 + 1] + Fixed32<>(trans[2].r) * factors[j * 3 + 2]);
+                    trans2[j].g = uint8_t(Fixed32<>(trans[0].g) * factors[j * 3 + 0] + Fixed32<>(trans[1].g) * factors[j * 3 + 1] + Fixed32<>(trans[2].g) * factors[j * 3 + 2]);
+                    trans2[j].b = uint8_t(Fixed32<>(trans[0].b) * factors[j * 3 + 0] + Fixed32<>(trans[1].b) * factors[j * 3 + 1] + Fixed32<>(trans[2].b) * factors[j * 3 + 2]);
+
+                    trans2[j].tex_index = trans[0].tex_index; // tex index can't be blended
+
+                    trans2[j].u = Fixed16<12>(factors[j * 3 + 0] * trans[0].u + factors[j * 3 + 1] * trans[1].u + factors[j * 3 + 2] * trans[2].u);
+                    trans2[j].v = Fixed16<12>(factors[j * 3 + 0] * trans[0].v + factors[j * 3 + 1] * trans[1].v + factors[j * 3 + 2] * trans[2].v);
+
+                    transform_vertex(trans2[j]);
+                    trans2[j].z = (trans2[j].z + 1) * Fixed32<>(32767.5f); //
+                }
+
+                // cull new triangle
+                add_triangle = !cull_triangle(trans2);
+            }
+
+            memcpy(trans, temp, sizeof(VertexOutData) * 3);
+        }
+
+        // w divide and viewport transform
+        for(int j = 0; j < 3; j++)
+        {
             transform_vertex(trans[j]);
+            trans[j].z = (trans[j].z + 1) * Fixed32<>(32767.5f); // move back to transform_vertex
         }
 
         // cull back faces and empty
         if(cull_triangle(trans))
             continue;
 
-        // far plane
-        // TODO: clip
-        if(trans[0].z > 1 || trans[1].z > 1 || trans[2].z > 1)
-            continue;
-
-        // near plane
-        // TODO: clip
-        if(trans[0].z < -1 || trans[1].z < -1 || trans[2].z < -1)
-            continue;
-
-        // calculate the rest of the attributes
-        for(int j = 0; j < 3; j++) {
-            // also convert z to uint16
-            trans[j].z = (trans[j].z + 1) * Fixed32<>(32767.5f);
-
-            vertex_shader(ptr + (i + j) * vertex_stride, trans + j, *this);
-        }
-
-        // TODO: clipping
         trans += stride;
+
+        if(add_triangle)
+            trans += stride;
     }
 
 #if PICO_MULTICORE
@@ -439,6 +518,100 @@ bool Render3D::cull_triangle(VertexOutData *verts)
         return true;
 
     return false;
+}
+
+bool Render3D::clip_triangle(VertexOutData *verts, Fixed32<> bound, int verts_outside, Fixed32<20> out_factors[2 * 3 * 3])
+{
+    // there's one vertex on one side and two on the other
+    // just need to figure out which is which... and which way around it is
+    VertexOutData *a, *b, *c;
+
+    bool one_outside = !(verts_outside & (verts_outside - 1));
+    int a_index;
+
+    if(one_outside)
+    {
+        // one vert outside, two inside (result is two triangles)
+        a_index = verts_outside / 2; // 1,2,4 -> 0,1,2
+    }
+    else
+    {
+        // two verts outside, one inside (result is one triangle)
+        auto inside = ~verts_outside & 7;
+        a_index = inside / 2; // 1,2,4 -> 0,1,2
+    }
+
+    a = verts + a_index;
+    b = verts + (a_index + 1) % 3;
+    c = verts + (a_index + 2) % 3;
+
+    // we've got our vertices, now intersect the edges (a-b and a-c)
+    // (bound is +/-1 used to flip for far/near plane)
+    Fixed32<20> bf, cf;
+
+    bf = Fixed32<20>(a->w - a->z * bound) / Fixed32<20>((a->w - a->z * bound) - (b->w - b->z * bound));
+    cf = Fixed32<20>(a->w - a->z * bound) / Fixed32<20>((a->w - a->z * bound) - (c->w - c->z * bound));
+
+    int b_index = b - verts;
+    int c_index = c - verts;
+
+    // and setup the factors for the new triangles
+    // (can't build them yet, we don't have the attributes)
+    if(one_outside)
+    {
+        // A = B * bf + A * (1 - bf)
+        out_factors[a_index * 3 + a_index] = Fixed32<20>(1) - bf;
+        out_factors[a_index * 3 + b_index] = bf;
+        out_factors[a_index * 3 + c_index] = 0;
+
+        // B = B
+        out_factors[b_index * 3 + a_index] = 0;
+        out_factors[b_index * 3 + b_index] = 1;
+        out_factors[b_index * 3 + c_index] = 0;
+
+        // C = C
+        out_factors[c_index * 3 + a_index] = 0;
+        out_factors[c_index * 3 + b_index] = 0;
+        out_factors[c_index * 3 + c_index] = 1;
+
+        // second triangle
+
+        // A = B * bf + A * (1 - bf)
+        out_factors[(a_index + 3) * 3 + a_index] = Fixed32<20>(1) - bf;
+        out_factors[(a_index + 3) * 3 + b_index] = bf;
+        out_factors[(a_index + 3) * 3 + c_index] = 0;
+
+        // B = C
+        out_factors[(b_index + 3) * 3 + a_index] = 0;
+        out_factors[(b_index + 3) * 3 + b_index] = 0;
+        out_factors[(b_index + 3) * 3 + c_index] = 1;
+
+        // C = C * cf + A * (1 - cf)
+        out_factors[(c_index + 3) * 3 + a_index] = Fixed32<20>(1) - cf;
+        out_factors[(c_index + 3) * 3 + b_index] = 0;
+        out_factors[(c_index + 3) * 3 + c_index] = cf;
+        return true;
+    }
+    else
+    {
+        // A = A
+        out_factors[a_index * 3 + a_index] = 1;
+        out_factors[a_index * 3 + b_index] = 0;
+        out_factors[a_index * 3 + c_index] = 0;
+
+        // B = B * bf + A * (1 - bf)
+        out_factors[b_index * 3 + a_index] = Fixed32<20>(1) - bf;
+        out_factors[b_index * 3 + b_index] = bf;
+        out_factors[b_index * 3 + c_index] = 0;
+
+        // C = C * cf + A * (1 - cf)
+        out_factors[c_index * 3 + a_index] = Fixed32<20>(1) - cf;
+        out_factors[c_index * 3 + b_index] = 0;
+        out_factors[c_index * 3 + c_index] = cf;
+
+        // no second triangle
+        return false;
+    }
 }
 
 void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point tile_pos)
