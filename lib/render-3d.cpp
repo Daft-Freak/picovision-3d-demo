@@ -39,6 +39,18 @@ Pen operator +(Pen p, PenDelta d)
     return {uint8_t(p.r + d.r), uint8_t(p.g + d.g), uint8_t(p.b + d.b), uint8_t(p.a + d.a)};
 }
 
+// integer vector helper used by triangle drawing
+struct IntVec3
+{
+    int32_t x, y, z;
+
+    IntVec3 operator -(const IntVec3 &v)
+    {
+        return {x - v.x, y - v.y, z - v.z};
+    }
+};
+
+
 #if THR3E_PICO_MULTICORE
 auto_init_mutex(blit_mutex);
 
@@ -341,6 +353,16 @@ void Render3D::set_texture(blit::Surface *tex, int index)
     textures[index] = tex;
 }
 
+bool Render3D::get_fill_triangles() const
+{
+    return filled_triangles;
+}
+
+void Render3D::set_fill_triangles(bool filled)
+{
+    filled_triangles = filled;
+}
+
 int Render3D::get_transformed_vertex_count() const
 {
     if(!transformed_vertex_ptr)
@@ -414,6 +436,9 @@ void Render3D::rasterise()
     bool offset_row = core_num == 1;
 #endif
 
+    // filled or wireframe triangle
+    auto do_triangle = filled_triangles ? &Render3D::fill_triangle : &Render3D::wireframe_triangle;
+
     // rasterise triangles for each screen tile
     for(int y = 0; y < screen.bounds.h; y += tile_height)
     {
@@ -441,7 +466,7 @@ void Render3D::rasterise()
     
             // now the triangles
             for(auto ptr = transformed_vertices; ptr != transformed_vertex_ptr; ptr += 3)
-                fill_triangle(ptr, {x, y});
+                (this->*do_triangle)(ptr, {x, y});
 
             // store colour tile
             if(screen.format == PixelFormat::BGR555)
@@ -616,16 +641,6 @@ bool Render3D::clip_triangle(VertexOutData *verts, Fixed32<> bound, int verts_ou
 
 void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point tile_pos)
 {
-    struct IntVec3
-    {
-        int32_t x, y, z;
-
-        IntVec3 operator -(const IntVec3 &v)
-        {
-            return {x - v.x, y - v.y, z - v.z};
-        }
-    };
-
     IntVec3 p0{int32_t(data[0].x) - tile_pos.x, int32_t(data[0].y) - tile_pos.y, int32_t(UFixed32<>(data[0].z))};
     IntVec3 p1{int32_t(data[1].x) - tile_pos.x, int32_t(data[1].y) - tile_pos.y, int32_t(UFixed32<>(data[1].z))};
     IntVec3 p2{int32_t(data[2].x) - tile_pos.x, int32_t(data[2].y) - tile_pos.y, int32_t(UFixed32<>(data[2].z))};
@@ -845,6 +860,49 @@ void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point ti
     }
 }
 
+void Render3D::wireframe_triangle(VertexOutData *data, blit::Point tile_pos)
+{
+    IntVec3 p0{int32_t(data[0].x) - tile_pos.x, int32_t(data[0].y) - tile_pos.y, int32_t(UFixed32<>(data[0].z))};
+    IntVec3 p1{int32_t(data[1].x) - tile_pos.x, int32_t(data[1].y) - tile_pos.y, int32_t(UFixed32<>(data[1].z))};
+    IntVec3 p2{int32_t(data[2].x) - tile_pos.x, int32_t(data[2].y) - tile_pos.y, int32_t(UFixed32<>(data[2].z))};
+
+    // check if outside tile
+    auto get_outside_sides = [&](IntVec3 &p)
+    {
+        int ret = 0;
+        if(p.x < 0)
+            ret = 1;
+        else if(p.x >= tile_width)
+            ret = 2;
+
+        if(p.y < 0)
+            ret += 4;
+        else if(p.y >= tile_height)
+            ret += 8;
+
+        return ret;
+    };
+
+    // all points outside on the same side
+    if(get_outside_sides(p0) & get_outside_sides(p1) & get_outside_sides(p2))
+        return;
+
+    // nothing to draw
+    if(p0.y == p1.y && p1.y == p2.y)
+        return;
+
+    Pen cols[3]{
+        {data[0].r, data[0].g, data[0].b},
+        {data[1].r, data[1].g, data[1].b},
+        {data[2].r, data[2].g, data[2].b}
+    };
+
+    // no texture handling, could be done but not sure how much use it would be...
+    gradient_line({p0.x, p0.y}, {p1.x, p1.y}, p0.z, p1.z, cols[0], cols[1]);
+    gradient_line({p1.x, p1.y}, {p2.x, p2.y}, p1.z, p2.z, cols[1], cols[2]);
+    gradient_line({p2.x, p2.y}, {p0.x, p0.y}, p2.z, p0.z, cols[2], cols[0]);
+}
+
 void blit_fast_code(Render3D::gradient_h_line)(int x1, int x2, uint16_t z1, uint16_t z2, int y, Pen col1, Pen col2)
 {
     if(x1 > x2)
@@ -1012,6 +1070,68 @@ void blit_fast_code(Render3D::textured_h_line)(int x1, int x2, uint16_t z1, uint
 
         *col_ptr = pack_colour(col);
         *depth_ptr = int32_t(z);
+    }
+}
+
+// used for wireframe
+void Render3D::gradient_line(Point p1, Point p2, uint16_t z1, uint16_t z2, Pen col1, Pen col2)
+{
+    if(p1 == p2)
+        return;
+
+    int32_t dx = int32_t(abs(p2.x - p1.x));
+    int32_t dy = -int32_t(abs(p2.y - p1.y));
+
+    int32_t sx = (p1.x < p2.x) ? 1 : -1;
+    int32_t sy = (p1.y < p2.y) ? 1 : -1;
+
+    int32_t err = dx + dy;
+
+    Point p(p1);
+
+    int count = std::max(dx, -dy);
+    auto scale = Fixed32<>(1) / count;
+
+    // depth
+    int z_diff = z2 - z1;
+    auto z_step = Fixed32<15>(scale) * z_diff;
+    auto z = Fixed32<15>(z1);
+
+    // colour
+    auto col_diff = col2 - col1;
+
+    auto r_step = scale * col_diff.r;
+    auto g_step = scale * col_diff.g;
+    auto b_step = scale * col_diff.b;
+
+    auto r = Fixed32<>(col1.r);
+    auto g = Fixed32<>(col1.g);
+    auto b = Fixed32<>(col1.b);
+
+    while(true)
+    {
+        if(p.x >= 0 && p.y >= 0 && p.x < tile_width && p.y < tile_height)
+        {
+            // depth test
+            if(int32_t(z) <= tile_depth_buffer[p.x + p.y * tile_width])
+            {
+                tile_depth_buffer[p.x + p.y * tile_width] = int32_t(z);
+                tile_colour_buffer[p.x + p.y * tile_width] = pack_colour({uint8_t(r), uint8_t(g), uint8_t(b)});
+            }
+        }
+
+        if(count-- == 0) break;
+
+        int32_t e2 = err * 2;
+        if(e2 >= dy) { err += dy; p.x += sx; }
+        if(e2 <= dx) { err += dx; p.y += sy; }
+
+        // increment depth/colour
+        z += z_step;
+
+        r += r_step;
+        g += g_step;
+        b += b_step;
     }
 }
 
