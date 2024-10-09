@@ -43,6 +43,8 @@ public:
     bool get_fill_triangles() const;
     void set_fill_triangles(bool filled);
 
+    void set_clear_colour(blit::Pen colour);
+
     int get_transformed_vertex_count() const;
 
     void rasterise();
@@ -74,6 +76,7 @@ protected:
     blit::Surface *textures[max_textures];
 
     bool filled_triangles = true;
+    uint16_t clear_colour;
 
     VertexOutData transformed_vertices[THR3E_MAX_OUTPUT_VERTICES];
     VertexOutData *transformed_vertex_ptr = nullptr;

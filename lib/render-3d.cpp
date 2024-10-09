@@ -109,6 +109,8 @@ Render3D::Render3D() : tile_surf(reinterpret_cast<uint8_t *>(tile_colour_buffer)
     for(int i = 0; i < max_textures; i++)
         textures[i] = nullptr;
 
+    clear_colour = pack_colour({127, 127, 127});
+
 #if THR3E_PICO_MULTICORE
     // we own core1 now
     // theoretically this could handle multiple instances
@@ -363,6 +365,11 @@ void Render3D::set_fill_triangles(bool filled)
     filled_triangles = filled;
 }
 
+void Render3D::set_clear_colour(blit::Pen colour)
+{
+    clear_colour = pack_colour(colour);
+}
+
 int Render3D::get_transformed_vertex_count() const
 {
     if(!transformed_vertex_ptr)
@@ -420,9 +427,7 @@ void Render3D::rasterise()
 
 #endif
 
-    uint16_t clear_col = pack_colour({127, 127, 127});
-
-    uint32_t clear_col32 = clear_col | clear_col << 16;
+    uint32_t clear_col32 = clear_colour | clear_colour << 16;
     uint32_t clear_depth32 = 0xFFFFFFFF;
 
     auto col_buf = tile_colour_buffer;
