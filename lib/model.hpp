@@ -3,6 +3,11 @@
 
 #include "render-3d.hpp"
 
+struct ModelShaderParams
+{
+    blit::Vec3 light_direction;
+};
+
 void model_lit_shader(const uint8_t *in, Render3D::VertexOutData *out, const Render3D &r);
 
 class Model final

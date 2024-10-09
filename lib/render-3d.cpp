@@ -350,6 +350,16 @@ void Render3D::set_vertex_shader(VertexShaderFunc shader)
     vertex_shader = shader;
 }
 
+void Render3D::set_shader_params(void *params)
+{
+    shader_params = params;
+}
+
+const void *Render3D::get_shader_params() const
+{
+    return shader_params;
+}
+
 void Render3D::set_texture(blit::Surface *tex, int index)
 {
     textures[index] = tex;

@@ -21,8 +21,8 @@ void model_lit_shader(const uint8_t *in, Render3D::VertexOutData *out, const Ren
     auto nz = nor.z * inv_len;
 
     // lighting
-    // TODO: store light vec... somewhere
-    blit::Vec3 light(-0.577350269f, -0.577350269f, 0.577350269f);
+    auto params = (ModelShaderParams *)r.get_shader_params();
+    auto &light = params->light_direction;
 
     // everything here is in -1 - 1
     // trade a bit of precision for avoiding the 64-bit muls

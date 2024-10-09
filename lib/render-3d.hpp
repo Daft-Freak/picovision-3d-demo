@@ -37,6 +37,10 @@ public:
     void set_position_shader(VertexShaderFunc shader);
     void set_vertex_shader(VertexShaderFunc shader);
 
+    // this is a handy place to store any additional inputs for shaders (e.g. light params)
+    void set_shader_params(void *params);
+    const void *get_shader_params() const;
+
     // tex would be const but blit::Surface is missing some consts...
     void set_texture(blit::Surface *tex, int index = 0);
 
@@ -71,6 +75,7 @@ protected:
 
     int vertex_stride = 3;
     VertexShaderFunc position_shader = nullptr, vertex_shader = nullptr;
+    void *shader_params = nullptr;
 
     static constexpr int max_textures = 1;
     blit::Surface *textures[max_textures];
