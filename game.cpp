@@ -80,7 +80,7 @@ void init()
     auto tanFov = tan(0.785398163);
     auto nearH = near * tanFov;
     auto nearW = nearH * (double(screen.bounds.w) / screen.bounds.h);
-    r3d.set_projection(frustum(-nearW, nearW, -nearH, nearH, near, far));
+    r3d.set_projection(frustum(-nearW, nearW, nearH, -nearH, near, far));
 
     shader_params.light_direction = {-0.577350269f, -0.577350269f, 0.577350269f};
     r3d.set_shader_params(&shader_params);

@@ -554,7 +554,7 @@ bool Render3D::cull_triangle(VertexOutData *verts)
 
     int32_t z = ab_x * ac_y - ab_y * ac_x;
 
-    if(z < 0)
+    if(z > 0)
         return true;
 
     return false;

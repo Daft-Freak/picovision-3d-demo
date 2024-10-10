@@ -133,9 +133,6 @@ def handle_mesh(filename, json_data, json_mesh, matrix):
             pos = matrix @ np.append(position_data[i], 1)
             nor = rot_matrix @ normal_data[i]
 
-            pos[1] *= -1 # flip y
-            nor[1] *= -1
-
             tex_coord = tex_coord_data[i]
 
             # make tex coords positive
@@ -159,12 +156,6 @@ def handle_mesh(filename, json_data, json_mesh, matrix):
                                         tex_coord[0], tex_coord[1])
             
             out_vertices.append(packed_vertex)
-
-        # flip winding
-        for i in range(0, len(out_vertices), 3):
-            tmp = out_vertices[i]
-            out_vertices[i] = out_vertices[i + 1]
-            out_vertices[i + 1] = tmp
 
         primitives.append(out_vertices)
 
