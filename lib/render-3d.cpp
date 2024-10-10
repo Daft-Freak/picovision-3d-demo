@@ -264,7 +264,16 @@ void Render3D::draw(int count, const uint8_t *ptr)
 
         // cull back faces and empty
         if(cull_triangle(trans))
+        {
+            if(add_triangle)
+            {
+                // we still need to keep the second triangle though
+                // this might happen due to precision issues causing the first triangle to get culled
+                memcpy(trans, trans + stride, sizeof(VertexOutData) * 3);
+                trans += stride;
+            }
             continue;
+        }
 
         trans += stride;
 
