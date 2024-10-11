@@ -1,13 +1,17 @@
 #pragma once
 
 #include "types/mat4.hpp"
+#include "types/vec3.hpp"
 #include "fixed-mat4.hpp"
 
 class Vec4
 {
 public:
-    Vec4(){}
-    Vec4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w){} 
+    constexpr Vec4() : Vec4(0.0f, 0.0f, 0.0f) {}
+    constexpr Vec4(float x, float y, float z, float w = 1.0f) : x(x), y(y), z(z), w(w){}
+    explicit constexpr Vec4(const blit::Vec3 &v, float w = 1.0f) : Vec4(v.x, v.y, v.z, w) {}
+
+    explicit constexpr operator blit::Vec3(){return {x, y, z};};
 
     float x, y, z, w;
 };
@@ -29,9 +33,9 @@ class FixedVec4
 public:
     using FixedT = Fixed<T, frac_bits>;
 
-    FixedVec4(){}
-    FixedVec4(FixedT x, FixedT y, FixedT z, FixedT w) : x(x), y(y), z(z), w(w){}
-    FixedVec4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w){} 
+    constexpr FixedVec4() : FixedVec4(0, 0, 0){}
+    constexpr FixedVec4(FixedT x, FixedT y, FixedT z, FixedT w = 1) : x(x), y(y), z(z), w(w){}
+    constexpr FixedVec4(float x, float y, float z, float w = 1.0f) : x(x), y(y), z(z), w(w){} 
 
     FixedT x, y, z, w;
 };
