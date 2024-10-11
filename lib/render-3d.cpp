@@ -245,7 +245,6 @@ void Render3D::draw(int count, const uint8_t *ptr)
                     trans2[j].v = Fixed16<12>(factors[j * 3 + 0] * trans[0].v + factors[j * 3 + 1] * trans[1].v + factors[j * 3 + 2] * trans[2].v);
 
                     transform_vertex(trans2[j]);
-                    trans2[j].z = (trans2[j].z + 1) * Fixed32<>(32767.5f); //
                 }
 
                 // cull new triangle
@@ -257,10 +256,7 @@ void Render3D::draw(int count, const uint8_t *ptr)
 
         // w divide and viewport transform
         for(int j = 0; j < 3; j++)
-        {
             transform_vertex(trans[j]);
-            trans[j].z = (trans[j].z + 1) * Fixed32<>(32767.5f); // move back to transform_vertex
-        }
 
         // cull back faces and empty
         if(cull_triangle(trans))
@@ -547,6 +543,8 @@ void Render3D::transform_vertex(VertexOutData &pos)
     // viewport
     pos.x = Fixed32<>(viewport.x) + (pos.x + 1) * (viewport.w / 2);
     pos.y = Fixed32<>(viewport.y) + (pos.y + 1) * (viewport.h / 2);
+
+    pos.z = (pos.z + 1) * Fixed32<>(32767.5f);
 }
 
 bool Render3D::cull_triangle(VertexOutData *verts)
