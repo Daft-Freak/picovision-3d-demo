@@ -11,7 +11,6 @@
 #include "types/vec3.hpp"
 
 #include "render-3d.hpp"
-#include "vec4.hpp"
 
 using namespace blit;
 
