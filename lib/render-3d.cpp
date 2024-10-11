@@ -540,8 +540,9 @@ void Render3D::transform_vertex(VertexOutData &pos)
     Rect viewport{0, 0, screen.bounds.w, screen.bounds.h};
 
     // viewport
-    pos.x = Fixed32<>(viewport.x) + (pos.x + 1) * (viewport.w / 2);
-    pos.y = Fixed32<>(viewport.y) + (pos.y + 1) * (viewport.h / 2);
+    // store the result as integers
+    pos.x = Fixed32<>::from_raw(viewport.x + int32_t(Fixed32<0>(viewport.w / 2) * (pos.x + 1)));
+    pos.y = Fixed32<>::from_raw(viewport.y + int32_t(Fixed32<0>(viewport.h / 2) * (pos.y + 1)));
 
     pos.z = (pos.z + 1) * Fixed32<>(32767.5f);
 }
@@ -549,10 +550,10 @@ void Render3D::transform_vertex(VertexOutData &pos)
 bool Render3D::cull_triangle(VertexOutData *verts)
 {
     // back-face culling
-    auto ab_x = int32_t(verts[1].x) - int32_t(verts[0].x);
-    auto ab_y = int32_t(verts[1].y) - int32_t(verts[0].y);
-    auto ac_x = int32_t(verts[2].x) - int32_t(verts[0].x);
-    auto ac_y = int32_t(verts[2].y) - int32_t(verts[0].y);
+    auto ab_x = verts[1].x.raw() - verts[0].x.raw();
+    auto ab_y = verts[1].y.raw() - verts[0].y.raw();
+    auto ac_x = verts[2].x.raw() - verts[0].x.raw();
+    auto ac_y = verts[2].y.raw() - verts[0].y.raw();
 
     // nothing to draw
     if((ab_x == 0 && ab_y == 0) || (ac_x == 0 && ac_y == 0))
@@ -662,9 +663,9 @@ bool Render3D::clip_triangle(VertexOutData *verts, Fixed32<> bound, int verts_ou
 
 void blit_fast_code(Render3D::fill_triangle)(VertexOutData *data, blit::Point tile_pos)
 {
-    IntVec3 p0{int32_t(data[0].x) - tile_pos.x, int32_t(data[0].y) - tile_pos.y, int32_t(UFixed32<>(data[0].z))};
-    IntVec3 p1{int32_t(data[1].x) - tile_pos.x, int32_t(data[1].y) - tile_pos.y, int32_t(UFixed32<>(data[1].z))};
-    IntVec3 p2{int32_t(data[2].x) - tile_pos.x, int32_t(data[2].y) - tile_pos.y, int32_t(UFixed32<>(data[2].z))};
+    IntVec3 p0{data[0].x.raw() - tile_pos.x, data[0].y.raw() - tile_pos.y, int32_t(UFixed32<>(data[0].z))};
+    IntVec3 p1{data[1].x.raw() - tile_pos.x, data[1].y.raw() - tile_pos.y, int32_t(UFixed32<>(data[1].z))};
+    IntVec3 p2{data[2].x.raw() - tile_pos.x, data[2].y.raw() - tile_pos.y, int32_t(UFixed32<>(data[2].z))};
 
     // check if outside tile
     auto get_outside_sides = [&](IntVec3 &p)
