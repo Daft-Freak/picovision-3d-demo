@@ -544,6 +544,11 @@ void Render3D::transform_vertex(VertexOutData &pos)
     pos.x = Fixed32<>::from_raw(viewport.x + int32_t(Fixed32<0>(viewport.w / 2) * (pos.x + 1)));
     pos.y = Fixed32<>::from_raw(viewport.y + int32_t(Fixed32<0>(viewport.h / 2) * (pos.y + 1)));
 
+    if(pos.z < -1)
+        pos.z = -1;
+    else if(pos.z > 1)
+        pos.z = 1;
+
     pos.z = (pos.z + 1) * Fixed32<>(32767.5f);
 }
 
