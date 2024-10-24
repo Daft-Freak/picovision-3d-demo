@@ -9,7 +9,6 @@
 #include "assets.hpp"
 #include "model.hpp"
 #include "render-3d.hpp"
-#include "vec4.hpp"
 
 using namespace blit;
 
