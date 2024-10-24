@@ -5,7 +5,6 @@
 #include <cstring>
 
 #include "32blit.hpp"
-#include "engine/api_private.hpp"
 
 #include "assets.hpp"
 #include "model.hpp"
@@ -13,30 +12,6 @@
 #include "vec4.hpp"
 
 using namespace blit;
-
-// copy/paste from an SDK branch so I can compile on master...
-bool set_screen_mode(ScreenMode new_mode, PixelFormat format, Size bounds) {
-    SurfaceTemplate new_screen;
-    new_screen.format = format;
-    new_screen.bounds = bounds;
-
-    if(!api.set_screen_mode_format(new_mode, new_screen))
-      return false;
-
-    screen = Surface(new_screen.data, new_screen.format, new_screen.bounds);
-    screen.palette = new_screen.palette;
-
-    if(new_screen.pen_blend)
-        screen.pbf = new_screen.pen_blend;
-    
-    if(new_screen.blit_blend)
-        screen.bbf = new_screen.blit_blend;
-
-    if(new_screen.pen_get)
-        screen.pgf = new_screen.pen_get;
-
-    return true;
-}
 
 // mat helpers
 
