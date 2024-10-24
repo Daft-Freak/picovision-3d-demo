@@ -49,7 +49,7 @@ jobs:
           - os: ubuntu-20.04
             name: Emscripten
             release-suffix: WEB
-            cmake-args: -D32BLIT_DIR=$GITHUB_WORKSPACE/32blit-sdk
+            cmake-args: -D32BLIT_DIR=$GITHUB_WORKSPACE/32blit-sdk -DTHR3E_DIR=%GITHUB_WORKSPACE/tile-based-high-resolution-3d-engine
             cmake-prefix: emcmake
             apt-packages: python3-setuptools
 
@@ -82,6 +82,12 @@ jobs:
       with:
         repository: 32blit/32blit-sdk
         path: 32blit-sdk
+
+    - name: Checkout 3D engine
+      uses: actions/checkout@v3
+      with:
+        repository: Daft-Freak/tile-based-high-resolution-3d-engine
+        path: tile-based-high-resolution-3d-engine
 
     # pico sdk for some builds
     - name: Checkout Pico SDK
