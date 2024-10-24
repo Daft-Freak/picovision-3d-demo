@@ -6,32 +6,13 @@
 
 #include "32blit.hpp"
 
-#include "assets.hpp"
+#include "camera.hpp"
 #include "model.hpp"
 #include "render-3d.hpp"
 
+#include "assets.hpp"
+
 using namespace blit;
-
-// mat helpers
-
-Mat4 frustum(float left, float right, float bottom, float top, float nearVal, float farVal)
-{
-    Mat4 mat = Mat4::identity();
-
-    mat.v00 = (2.0f * nearVal) / (right - left);
-
-    mat.v11 = (2.0f * nearVal) / (top - bottom);
-
-    mat.v02 = (right + left) / (right - left);
-    mat.v12 = (top + bottom) / (top - bottom);
-    mat.v22 = -((farVal + nearVal) / (farVal - nearVal));
-    mat.v32 = -1.0f;
-
-    mat.v23 = -((2 * farVal * nearVal) / (farVal - nearVal));
-    mat.v33 = 0.0f;
-
-    return mat;
-}
 
 static Render3D r3d;
 static float ang = 0.0f, ang2 = 0.0f;
@@ -50,11 +31,7 @@ void init()
     if(!::set_screen_mode(ScreenMode::hires, PixelFormat::BGR555, {640, 480}))
         set_screen_mode(ScreenMode::hires, PixelFormat::RGB565);
 
-    double near = 0.1, far = 10.0;
-    auto tanFov = tan(0.785398163);
-    auto nearH = near * tanFov;
-    auto nearW = nearH * (double(screen.bounds.w) / screen.bounds.h);
-    r3d.set_projection(frustum(-nearW, nearW, nearH, -nearH, near, far));
+    r3d.set_projection(Camera::perspective_matrix(0.1f, 10.0f, blit::pi / 4.0f, float(screen.bounds.w) / screen.bounds.h));
 
     shader_params.light_direction = {-0.577350269f, 0.577350269f, 0.577350269f};
     r3d.set_shader_params(&shader_params);
