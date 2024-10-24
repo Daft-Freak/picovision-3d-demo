@@ -63,6 +63,7 @@ static Render3D r3d;
 static float ang = 0.0f, ang2 = 0.0f;
 static float scale = 0.1f;
 
+static ModelShaderParams shader_params;
 static Model model(asset_picovision);
 static Surface *picovision_tex;
 
@@ -79,7 +80,10 @@ void init()
     auto tanFov = tan(0.785398163);
     auto nearH = near * tanFov;
     auto nearW = nearH * (double(screen.bounds.w) / screen.bounds.h);
-    r3d.set_projection(frustum(-nearW, nearW, -nearH, nearH, near, far));
+    r3d.set_projection(frustum(-nearW, nearW, nearH, -nearH, near, far));
+
+    shader_params.light_direction = {-0.577350269f, 0.577350269f, 0.577350269f};
+    r3d.set_shader_params(&shader_params);
 
     picovision_tex = Surface::load(asset_picovision_tex);
     r3d.set_texture(picovision_tex, 0);
